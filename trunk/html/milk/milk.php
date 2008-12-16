@@ -1,9 +1,10 @@
 <?php
 
-    define('DIR_SEP', DIRECTORY_SEPARATOR);
-    define('MILK_DIR', dirname(realpath(__FILE__)));
-    define('MILK_EXT_DIR', MilkLauncher::mkpath(MILK_DIR, 'ext'));
-    define('MILK_APP_DIR', MilkLauncher::mkpath(MILK_DIR, 'app'));
+    define('DIR_SEP',                          DIRECTORY_SEPARATOR);
+    define('MILK_DIR',                 dirname(realpath(__FILE__)));
+    define('MILK_BASE_DIR', MilkLauncher::mkPath(MILK_DIR, 'base'));
+    define('MILK_EXT_DIR',   MilkLauncher::mkPath(MILK_DIR, 'ext'));
+    define('MILK_APP_DIR',   MilkLauncher::mkPath(MILK_DIR, 'app'));
 
     abstract class MilkFrameWork {
         protected $props;
@@ -52,6 +53,23 @@
             return isset($this->hooks[$hook]);
         }
 
+        public function removeHookHandler($hook, &$cb, $obj=NULL) {
+            if ($obj == NULL) $obj = $this;
+            assert('is_string($hook)');
+            assert('$obj instanceof MilkFrameWork');
+
+            if ($obj->hasHook($hook) && ((is_string($cb) && function_exists($cb)) || is_callable($cb))) {
+                for ($i=0; $i < count($this->hooks[$hook]); $i++) {
+                    if ($this->hooks[$hook][$i] === $cb) {
+                        array_splice($this->hooks[$hook], $i, 1);
+                        return TRUE;
+                    }
+                }
+            }
+
+            return FALSE;
+        }
+
         public function addHookHandler($hook, &$cb, $obj=NULL) {
             if ($obj == NULL) $obj = $this;
             assert('is_string($hook)');
@@ -81,22 +99,30 @@
     }
 
     class MilkLauncher extends MilkFrameWork {
+        public $module;
+        protected $moduleName;
 
         public function __construct($mod) {
             // include all required files
-            $this->load(MILK_DIR, 'base', 'util', 'tools.php');
+            $this->load(MILK_BASE_DIR, 'util', 'tools.php');
 
             // load config
             $this->loadDir(MILK_APP_DIR, 'config');
             $this->loadDir(MILK_EXT_DIR, 'config');
-            $this->load(MILK_DIR, 'base', 'config', 'default.php');
+            $this->load(MILK_BASE_DIR, 'config', 'default.php');
+
+            // Load base and extension controls
+            $this->loadDir(MILK_BASE_DIR, 'control');
+            $this->loadDir(MILK_EXT_DIR, 'control');
 
             // load & execute module
+            $this->moduleName = $mod;
+            $this->loadModule();
         }
 
         public static function load($arg) {
-            if (is_readable($file = self::mkpath(func_get_args()))) {
-                require_once($file);
+            if (is_readable($file = self::mkPath(func_get_args()))) {
+                if (require_once($file)) return TRUE;
             } else {
                 trigger_error('MilkLauncher::load() - Unable to load file ' . $file, E_USER_ERROR);
                 exit;
@@ -106,9 +132,9 @@
         }
 
         public static function loadDir($arg) {
-            if (is_readable($dir = self::mkpath(func_get_args())) && ($dp = opendir($dir))) {
+            if (is_readable($dir = self::mkPath(func_get_args())) && ($dp = opendir($dir))) {
                 while (($file = readdir($dp)) !== FALSE) {
-                    if ($file == '.' || $file == '..') continue;
+                    if ($file == '.' || $file == '..' || $file{0} = '.') continue;
                     self::load($file);
                 }
             } else {
@@ -119,22 +145,91 @@
             return FALSE;
         }
 
-        static public function mkpath($arg) {
+        static public function mkPath($arg) {
             if (is_array($arg)) {
                 $args =& $arg;
             } else {
                 $args = func_get_args();
             }
+
             return implode(DIR_SEP, $args);
         }
 
         protected function loadModule() {
-            // TODO: Use CFG_MODULE_PATH to load file
+            if ($this->load(MILK_APP_DIR, 'module', strtolower($this->moduleName) . '.php')) {
+                if (class_exists($this->moduleName) && is_subclass_of($this->moduleName, 'MilkModule')) {
+                    $this->module = new $this->moduleName();
+                    return TRUE;
+                } else {
+                    trigger_error('MilkLauncher::loadModule() - Unable to load module class ' . $this->moduleName, E_USER_ERROR);
+                }
+            } else {
+                return FALSE;
+            }
         }
     }
 
-    class MilkModule extends MilkFrameWork { }
+    class MilkModule extends MilkFrameWork {
+        public $defaultAction = 'default';
+        public $theme         = 'default';
+        public $request;
 
-    class MilkWidget extends MilkFrameWork { }
+        public function __construct() {
+            $this->request = $_REQUEST;
+
+            $this->addHook('prepare');
+            $this->addHook('execute');
+            $this->addHook('deliver');
+
+            $cb = array($this, 'execute');
+            $this->addHookHandler('execute', $cb);
+            $cb = array($this, 'deliver');
+            $this->addHookHandler('deliver', $cb);
+        }
+
+        public function execute() {
+            if (isset($this->request['act']) && method_exists($this, $this->request['act'])) {
+                $this->{$this->request['act']}();
+            } else if (method_exists($this, $this->defaultAction)) {
+                $this->{$this->defaultAction}();
+            }
+        }
+
+        public function deliver() { }
+
+        public function run() {
+            $this->execHook('prepare');
+            $this->execHook('execute');
+            $this->execHook('deliver');
+        }
+
+        public function newControl($ctrl) {
+            $args = func_get_args();
+            $cb = array('MilkControl', 'create');
+            return call_user_func_array($cb, $args);
+        }
+    }
+
+    class MilkControl extends MilkFrameWork {
+        public $controls = array();
+
+        public static function create($p, $ctrl) {
+            if (class_exists($ctrl) && is_subclass_of($ctrl, 'MilkControl')) {
+                $args = func_get_args();
+                array_shift($args);
+
+                switch (count($args)) {
+                    case 0: return new $ctrl($p);
+                    case 1: return new $ctrl($p, $args[0]);
+                    case 2: return new $ctrl($p, $args[0], $args[1]);
+                    case 3: return new $ctrl($p, $args[0], $args[1], $args[2]);
+                    case 4: return new $ctrl($p, $args[0], $args[1], $args[2], $args[3]);
+                    default: return eval('return new $ctrl($p, $args[' . implode('], $args[', range(0, count($args)-1)) . ']);');
+                }
+            } else {
+                trigger_error('MilkControl::create() - Class for control ' . $ctrl . ' does not exist', E_USER_ERROR);
+            }
+        }
+    }
 
     class MilkTheme extends MilkFramework { }
