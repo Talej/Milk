@@ -172,6 +172,8 @@
     class MilkModule extends MilkFrameWork {
         public $defaultAction = 'default';
         public $theme         = 'default';
+        public $idSeq         = 0;
+        public $idPrefix      = '';
         public $request;
 
         public function __construct() {
@@ -211,7 +213,24 @@
     }
 
     class MilkControl extends MilkFrameWork {
+        public $id;
+        public $parent;
+        public $module;
+        public $prev;
         public $controls = array();
+        public $request;
+
+        public function __construct($parent, $id=NULL) {
+            $this->parent = $parent;
+            if ($this->parent instanceof MilkModule) {
+                $this->module = $this->parent;
+            } else if ($this->parent->module instanceof MilkModule) {
+                $this->module = $this->parent->module;
+            }
+            $this->id     = ($id === NULL ? $this->getID() : (array)$id);
+            $this->name   = get_class($this);
+            $this->setRequest();
+        }
 
         public static function create($p, $ctrl) {
             if (class_exists($ctrl) && is_subclass_of($ctrl, 'MilkControl')) {
@@ -228,6 +247,43 @@
                 }
             } else {
                 trigger_error('MilkControl::create() - Class for control ' . $ctrl . ' does not exist', E_USER_ERROR);
+            }
+        }
+
+        public function setRequest() {
+            $this->request = NULL;
+            $tmp =& $this->mod->request;
+            foreach ((array)$this->id as $key) {
+                if (!is_array($tmp) || !isset($tmp[$key])) return;
+                $tmp =& $tmp[$key];
+            }
+            $this->request =& $tmp;
+        }
+
+        public function getID() {
+            $id = $this->idSpace();
+            $id[] = ++$this->module->idSeq;
+
+            return $id;
+        }
+
+        public function idSpace() {
+            if ($this->parent) {
+                return $this->parent->idSpace();
+            } else if ($this->module->idPrefix) {
+                return array($this->module->idPrefix);
+            } else {
+                return array();
+            }
+        }
+
+        public function add($ctrl) {
+            $args = func_get_args();
+            $cb = array('MilkControl', 'create');
+            if ($control = call_user_func_array($cb, $args)) {
+                $this->controls[] = $control;
+                $this->prev = $control;
+                return $control;
             }
         }
     }
