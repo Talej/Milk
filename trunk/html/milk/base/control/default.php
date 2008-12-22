@@ -201,7 +201,7 @@
         public $minsel;
         public $maxsel;
 
-        function __construct($parent, $name, $value, $attribs=NULL) {
+        public function __construct($parent, $name, $value, $attribs=NULL) {
             parent::__construct($parent, $name, $value, $attribs);
             $this->options = $this->getAttrib('options');
             $this->minsel = $this->getAttrib('min');
@@ -230,11 +230,114 @@
         public $signals = array('enter');
     }
 
-    class FileBox extends Form {
-
-    }
+    class FileBox extends Form { }
     /* End form controls */
 
-    class XML extends MilkControl { }
+    class XML extends MilkControl {
+        public $tag;
+        public $props;
+        public $value;
+        public $stripCtrlChars = TRUE;
 
-    class CSV extends MilkControl { }
+        public function __construct($parent, $tag, $props=NULL, $value='__XML_NOVALUE__') {
+            parent::__construct($parent);
+            $this->tag   = $tag;
+            $this->props = $props;
+            $this->value = $value;
+        }
+
+        public function add($tag, $props=NULL, $value='__XML_NOVALUE__') {
+            return parent::add('XML', $tag, $props, $value);
+        }
+
+        public function entitise($str) {
+            $str = str_replace(array('&', '"', "'", '<', '>'), array('&amp;', '&quot;', '&apos;', '&lt;', '&gt;'), (string)$str);
+            return $this->stripControlChars($str);
+        }
+
+        public function stripControlChars($str) {
+            if ($this->stripCtrlChars) {
+                return preg_replace('/([\x00-\x08\x0B-\x0C\x0E-\x0F])/e', '', $str);
+            }
+
+            return $str;
+        }
+    }
+
+    class CSV extends MilkControl {
+        public $data = array();
+        public $delimeter = ',';
+        public $headers = array();
+
+        function addHeaders($headers) {
+            if (is_array($headers) || is_object($headers)) {
+                foreach ($headers as $val) {
+                    $this->headers[] = $val;
+                }
+            }
+        }
+
+        function addRow($row) {
+            if (is_array($row) || is_object($row)) {
+                $this->data[] = $row;
+            }
+        }
+
+        function addAll($data) {
+            if (is_array($data)) {
+                $this->data = $data;
+                return TRUE;
+            }
+
+            return FALSE;
+        }
+
+        /**
+         * encode() takes an array and encodes it for use as a row in a CSV
+         *
+         * @return string the data (row) encoded for a CSV
+         * @param array &$data the data to CSV encode
+         * @param string $delim optional param, the column delimiter. Deaults to comma (,)
+         */
+        function encode(&$data, $delim=NULL) {
+            if (!$delim) $delim = $this->delimeter;
+
+            $rowbuffer = '';
+            foreach ($data as $field) {
+                if (is_object($field) || is_array($field)) $field = '';
+                if ($rowbuffer != '') $rowbuffer .= $delim;
+                if ($field == '' || strchr($field, $delim) || strchr($field, '"')) {
+                    $field = '"' . str_replace('"', '""', $field) . '"';
+                }
+                $rowbuffer .= $field;
+            }
+
+            return $rowbuffer . "\r\n";
+            // Note: UTF-16LE encoding is required for asian character set support in excel.
+            // However, a BOM (Byte-Order-Mark must also be used at the beginning of the file for this to work
+            // return mb_convert_encoding($rowbuffer . "\r\n", 'UTF-16LE');
+        }
+
+        function toFile($file=NULL) {
+            header('Pragma: ');
+            header('Content-type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment; filename="' . ($file ? str_replace('"', '\"', $filename) : 'data.csv') . '"');
+
+            print $this->toString();
+            exit;
+        }
+
+        function toString() {
+            $csv = '';
+            if (!empty($this->headers)) {
+                $csv.= $this->encode($this->headers, $this->delimeter);
+            }
+            if (is_array($this->data)) {
+                foreach ($this->data as $key => $val) {
+                    if (is_array($val) || is_object($val)) $csv.= $this->encode($val, $this->delimeter);
+                }
+            }
+
+            return $csv;
+        }
+    }
