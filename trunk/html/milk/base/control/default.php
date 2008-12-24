@@ -63,8 +63,10 @@
     class HorizCont extends HorizontalBox { }
     class HCont extends HorizontalBox { }
 
+    class Template extends MilkControl { }
+
     class Table extends MilkControl {
-        $row = 0;
+        public $row = 0;
 
         public function __construct($parent) {
             parent::__construct($parent);

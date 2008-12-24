@@ -89,12 +89,18 @@
             if (isset($this->hooks[$hook]) && is_array($this->hooks[$hook])) {
                 foreach ($this->hooks[$hook] as $handler) {
                     if (is_string($handler) && function_exists($handler)) {
-                        $handler();
+                        return $handler();
                     } else if (is_callable($handler)) {
-                        call_user_func($handler);
+                        return call_user_func($handler);
+                    } else {
+                        trigger_error('MilkFramework::execHook() - ' . $handler . ' is not a valid callback', E_USER_ERROR);
                     }
                 }
+            } else {
+                trigger_error('MilkFramework::execHook() - Hook ' . $hook . ' does not exist', E_USER_ERROR);
             }
+            
+            return FALSE;
         }
     }
 
@@ -103,6 +109,12 @@
         protected $moduleName;
 
         public function __construct($mod) {
+            // Load core framework classes
+            $this->load(MILK_BASE_DIR, 'framework', 'module.php');
+            $this->load(MILK_BASE_DIR, 'framework', 'control.php');
+            $this->load(MILK_BASE_DIR, 'framework', 'datadef.php');
+            $this->load(MILK_BASE_DIR, 'framework', 'theme.php');
+
             // include all required files
             $this->load(MILK_BASE_DIR, 'util', 'tools.php');
 
@@ -134,8 +146,8 @@
         public static function loadDir($arg) {
             if (is_readable($dir = self::mkPath(func_get_args())) && ($dp = opendir($dir))) {
                 while (($file = readdir($dp)) !== FALSE) {
-                    if ($file == '.' || $file == '..' || $file{0} = '.') continue;
-                    self::load($file);
+                    if ($file == '.' || $file == '..' || $file{0} == '.') continue;
+                    self::load($dir, $file);
                 }
             } else {
                 trigger_error('MilkLauncher::load() - Unable to load directory ' . $dir, E_USER_ERROR);
@@ -168,124 +180,3 @@
             }
         }
     }
-
-    class MilkModule extends MilkFrameWork {
-        public $defaultAction = 'default';
-        public $theme         = 'default';
-        public $idSeq         = 0;
-        public $idPrefix      = '';
-        public $request;
-
-        public function __construct() {
-            $this->request = $_REQUEST;
-
-            $this->addHook('prepare');
-            $this->addHook('execute');
-            $this->addHook('deliver');
-
-            $cb = array($this, 'execute');
-            $this->addHookHandler('execute', $cb);
-            $cb = array($this, 'deliver');
-            $this->addHookHandler('deliver', $cb);
-        }
-
-        public function execute() {
-            if (isset($this->request['act']) && method_exists($this, $this->request['act'])) {
-                $this->{$this->request['act']}();
-            } else if (method_exists($this, $this->defaultAction)) {
-                $this->{$this->defaultAction}();
-            }
-        }
-
-        public function deliver() { }
-
-        public function run() {
-            $this->execHook('prepare');
-            $this->execHook('execute');
-            $this->execHook('deliver');
-        }
-
-        public function newControl($ctrl) {
-            $args = func_get_args();
-            $cb = array('MilkControl', 'create');
-            return call_user_func_array($cb, $args);
-        }
-    }
-
-    class MilkControl extends MilkFrameWork {
-        public $id;
-        public $parent;
-        public $module;
-        public $prev;
-        public $controls = array();
-        public $request;
-
-        public function __construct($parent, $id=NULL) {
-            $this->parent = $parent;
-            if ($this->parent instanceof MilkModule) {
-                $this->module = $this->parent;
-            } else if ($this->parent->module instanceof MilkModule) {
-                $this->module = $this->parent->module;
-            }
-            $this->id     = ($id === NULL ? $this->getID() : (array)$id);
-            $this->name   = get_class($this);
-            $this->setRequest();
-        }
-
-        public static function create($p, $ctrl) {
-            if (class_exists($ctrl) && is_subclass_of($ctrl, 'MilkControl')) {
-                $args = func_get_args();
-                array_shift($args);
-
-                switch (count($args)) {
-                    case 0: return new $ctrl($p);
-                    case 1: return new $ctrl($p, $args[0]);
-                    case 2: return new $ctrl($p, $args[0], $args[1]);
-                    case 3: return new $ctrl($p, $args[0], $args[1], $args[2]);
-                    case 4: return new $ctrl($p, $args[0], $args[1], $args[2], $args[3]);
-                    default: return eval('return new $ctrl($p, $args[' . implode('], $args[', range(0, count($args)-1)) . ']);');
-                }
-            } else {
-                trigger_error('MilkControl::create() - Class for control ' . $ctrl . ' does not exist', E_USER_ERROR);
-            }
-        }
-
-        public function setRequest() {
-            $this->request = NULL;
-            $tmp =& $this->mod->request;
-            foreach ((array)$this->id as $key) {
-                if (!is_array($tmp) || !isset($tmp[$key])) return;
-                $tmp =& $tmp[$key];
-            }
-            $this->request =& $tmp;
-        }
-
-        public function getID() {
-            $id = $this->idSpace();
-            $id[] = ++$this->module->idSeq;
-
-            return $id;
-        }
-
-        public function idSpace() {
-            if ($this->parent) {
-                return $this->parent->idSpace();
-            } else if ($this->module->idPrefix) {
-                return array($this->module->idPrefix);
-            } else {
-                return array();
-            }
-        }
-
-        public function add($ctrl) {
-            $args = func_get_args();
-            $cb = array('MilkControl', 'create');
-            if ($control = call_user_func_array($cb, $args)) {
-                $this->controls[] = $control;
-                $this->prev = $control;
-                return $control;
-            }
-        }
-    }
-
-    class MilkTheme extends MilkFramework { }
