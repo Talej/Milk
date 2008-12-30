@@ -63,7 +63,15 @@
     class HorizCont extends HorizontalBox { }
     class HCont extends HorizontalBox { }
 
-    class Template extends MilkControl { }
+    class Template extends MilkControl {
+        public $title;
+        public $file;
+
+        public function __construct($parent, $title=NULL, $file=NULL) {
+            $this->title = $title;
+            $this->file  = MilkTools::ifNull($file, MilkLauncher::mkPath(MILK_APP_DIR, 'template', 'default.php'));
+        }
+    }
 
     class Table extends MilkControl {
         public $row = 0;
