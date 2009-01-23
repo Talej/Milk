@@ -4,5 +4,7 @@
 
         public function index() {
             $t = $this->newControl('Template');
+
+            $this->addControl($t);
         }
     }

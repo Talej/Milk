@@ -2,13 +2,14 @@
 
     class MilkModule extends MilkFrameWork {
         public $defaultAction = 'index';
-        public $theme         = 'default';
+        public $theme         = 'standard';
         public $idSeq         = 0;
         public $idPrefix      = '';
         public $dataDefs      = array();
         public $errors        = array();
         public $request;
         public $dataDef;
+        public $rootControl;
 
         public function __construct() {
             $this->request = $_REQUEST; // TODO: Correctly set the request (Get, post, files)
@@ -35,7 +36,14 @@
             }
         }
 
-        public function deliver() { }
+        public function deliver() {
+            if ($this->rootControl instanceof MilkControl) {
+                $this->rootControl->deliver();
+            } else {
+                trigger_error('MilkModule::deliver() - Can not deliver output without a root control set', E_USER_ERROR);
+                exit;
+            }
+        }
 
         public function run() {
             $this->execHook('prepare');
@@ -48,6 +56,16 @@
             $cb = array('MilkControl', 'create');
             array_unshift($args, $this);
             return call_user_func_array($cb, $args);
+        }
+
+        public function addControl($ctrl) {
+            if ($this->rootControl instanceof MilkControl) {
+                trigger_error('MilkModule::addControl() - A root control has already been added for this module', E_USER_ERROR);
+                exit;
+            } else {
+                $this->rootControl = $ctrl;
+                return $ctrl;
+            }
         }
 
         /**

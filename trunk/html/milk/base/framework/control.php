@@ -7,6 +7,7 @@
         public $prev;
         public $controls = array();
         public $request;
+        public $theme;
 
         public function __construct($parent, $id=NULL) {
             $this->parent = $parent;
@@ -56,7 +57,7 @@
         }
 
         public function idSpace() {
-            if ($this->parent) {
+            if ($this->parent instanceof MilkControl) {
                 return $this->parent->idSpace();
             } else if ($this->module->idPrefix) {
                 return array($this->module->idPrefix);
@@ -72,6 +73,19 @@
                 $this->controls[] = $control;
                 $this->prev = $control;
                 return $control;
+            }
+        }
+
+        public function deliver() {
+            $t = MilkTools::ifNull($this->theme, $this->module->theme);
+            if ($theme = MilkTheme::getTheme($t)) {
+                $cb = array($theme, get_class($this));
+                if (is_callable($cb)) {
+                    call_user_func($cb, $this);
+                } else {
+                    trigger_error('MilkControl::deliver() - Unable to find delivery method for ' . $cb[1] . ' in ' . $t . ' theme', E_USER_ERROR);
+                    exit;
+                }
             }
         }
     }

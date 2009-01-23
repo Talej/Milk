@@ -68,6 +68,7 @@
         public $file;
 
         public function __construct($parent, $title=NULL, $file=NULL) {
+            parent::__construct($parent);
             $this->title = $title;
             $this->file  = MilkTools::ifNull($file, MilkLauncher::mkPath(MILK_APP_DIR, 'template', 'default.php'));
         }
