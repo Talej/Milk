@@ -8,6 +8,7 @@
         public $controls = array();
         public $request;
         public $theme;
+        public $_theme;
 
         public function __construct($parent, $id=NULL) {
             $this->parent = $parent;
@@ -24,6 +25,7 @@
         public static function create($p, $ctrl) {
             if (class_exists($ctrl) && is_subclass_of($ctrl, 'MilkControl')) {
                 $args = func_get_args();
+                array_shift($args);
                 array_shift($args);
 
                 switch (count($args)) {
@@ -66,9 +68,20 @@
             }
         }
 
+        public function hasParent($class=NULL) {
+            if (!is_string($class) && $this->parent instanceof MilkControl) {
+                return TRUE;
+            } else if (class_exists($class) && $this->parent instanceof $class) {
+                return TRUE;
+            }
+
+            return FALSE;
+        }
+
         public function add($ctrl) {
             $args = func_get_args();
             $cb = array('MilkControl', 'create');
+            array_unshift($args, $this);
             if ($control = call_user_func_array($cb, $args)) {
                 $this->controls[] = $control;
                 $this->prev = $control;
@@ -79,9 +92,12 @@
         public function deliver() {
             $t = MilkTools::ifNull($this->theme, $this->module->theme);
             if ($theme = MilkTheme::getTheme($t)) {
+                $this->_theme = $theme;
+                array_push($theme->streams, array());
                 $cb = array($theme, get_class($this));
                 if (is_callable($cb)) {
                     call_user_func($cb, $this);
+                    array_pop($theme->streams);
                 } else {
                     trigger_error('MilkControl::deliver() - Unable to find delivery method for ' . $cb[1] . ' in ' . $t . ' theme', E_USER_ERROR);
                     exit;

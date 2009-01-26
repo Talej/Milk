@@ -24,17 +24,17 @@
         public $width;
         public $height;
         public $alt;
-        public $top;
-        public $left;
+        public $x;
+        public $y;
 
-        public function __construct($parent, $src, $width, $height, $alt='', $top=NULL, $left=NULL) {
+        public function __construct($parent, $src, $width, $height, $alt='', $x=NULL, $y=NULL) {
             parent::__construct($parent);
             $this->src    = $src;
             $this->width  = $width;
             $this->height = $height;
             $this->alt    = $alt;
-            $this->top    = $top;
-            $this->left   = $left;
+            $this->x      = $x;
+            $this->y      = $y;
         }
     }
 

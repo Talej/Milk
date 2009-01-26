@@ -1,6 +1,7 @@
 <?php
 
     class MilkTheme extends MilkFramework {
+        public $streams = array();
 
         static public function getTheme($theme) {
             static $themes = array();
@@ -26,5 +27,36 @@
             }
 
             return FALSE;
+        }
+
+        public function put($key, $val) {
+            if (count($this->streams) > 1) {
+                $stream =& $this->streams[count($this->streams)-2];
+            } else {
+                $stream =& $this->streams[0];
+            }
+            if (!isset($stream[$key])) $stream[$key] = array();
+            $stream[$key][] = $val;
+        }
+
+        public function get($key, $cast='string') {
+            $i = count($this->streams)-1;
+            if (isset($this->streams[$i][$key])) {
+                $val = $this->streams[$i][$key];
+                unset($this->streams[$i][$key]);
+            } else {
+                $val = array();
+            }
+            if ($cast == 'string') {
+                return implode('', $val);
+            } else {
+                return $val;
+            }
+        }
+
+        public function deliverChildren($ctrl) {
+            foreach ($ctrl->controls as $control) {
+                $control->deliver();
+            }
         }
     }
