@@ -23,6 +23,7 @@
         }
 
         public static function create($p, $ctrl) {
+            $ctrl.= '_MilkControl';
             if (class_exists($ctrl) && is_subclass_of($ctrl, 'MilkControl')) {
                 $args = func_get_args();
                 array_shift($args);
@@ -94,7 +95,7 @@
             if ($theme = MilkTheme::getTheme($t)) {
                 $this->_theme = $theme;
                 array_push($theme->streams, array());
-                $cb = array($theme, get_class($this));
+                $cb = array($theme, str_replace('_MilkControl', '', get_class($this)));
                 if (is_callable($cb)) {
                     call_user_func($cb, $this);
                     array_pop($theme->streams);

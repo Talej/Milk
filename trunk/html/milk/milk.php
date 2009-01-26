@@ -169,11 +169,12 @@
 
         protected function loadModule() {
             if ($this->load(MILK_APP_DIR, 'module', strtolower($this->moduleName) . '.php')) {
-                if (class_exists($this->moduleName) && is_subclass_of($this->moduleName, 'MilkModule')) {
-                    $this->module = new $this->moduleName();
+                $classname = $this->moduleName . '_MilkModule';
+                if (class_exists($classname) && is_subclass_of($classname, 'MilkModule')) {
+                    $this->module = new $classname();
                     return TRUE;
                 } else {
-                    trigger_error('MilkLauncher::loadModule() - Unable to load module class ' . $this->moduleName, E_USER_ERROR);
+                    trigger_error('MilkLauncher::loadModule() - Unable to load module class ' . $classname, E_USER_ERROR);
                 }
             } else {
                 return FALSE;

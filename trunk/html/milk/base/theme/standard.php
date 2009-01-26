@@ -1,9 +1,20 @@
 <?php
 
-    class standard extends MilkTheme {
+    class standard_MilkTheme extends MilkTheme {
 
-        public function entitise($v) {
-            return htmlentities($v, ENT_QUOTES, 'UTF-8');
+        public function xhtmlDoc($title=NULL) {
+            $str = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"\n"
+                 . "     \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"
+                 . "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">\n"
+                 . "<head>\n"
+                 . "<title>" . $this->entitise($title) . "</title>\n"
+                 . "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>\n"
+                 . $this->includes()
+                 . "</head>\n"
+                 . "<body onload=\"load()\">" . $this->get('xhtml') . "</body>\n"
+                 . "</html>";
+
+            print $str;
         }
 
         public function Text($ctrl) {
