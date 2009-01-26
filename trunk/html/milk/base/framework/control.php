@@ -90,15 +90,11 @@
             }
         }
 
-        public function deliver() {
-            $t = MilkTools::ifNull($this->theme, $this->module->theme);
-            if ($theme = MilkTheme::getTheme($t)) {
-                $this->_theme = $theme;
-                array_push($theme->streams, array());
+        public function deliver($theme) {
+            if ($theme instanceof MilkTheme) {
                 $cb = array($theme, str_replace('_MilkControl', '', get_class($this)));
                 if (is_callable($cb)) {
                     call_user_func($cb, $this);
-                    array_pop($theme->streams);
                 } else {
                     trigger_error('MilkControl::deliver() - Unable to find delivery method for ' . $cb[1] . ' in ' . $t . ' theme', E_USER_ERROR);
                     exit;

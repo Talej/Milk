@@ -38,7 +38,8 @@
 
         public function deliver() {
             if ($this->rootControl instanceof MilkControl) {
-                $this->rootControl->deliver();
+                $theme = new MilkTheme();
+                $theme->deliver($this->rootControl);
             } else {
                 trigger_error('MilkModule::deliver() - Can not deliver output without a root control set', E_USER_ERROR);
                 exit;

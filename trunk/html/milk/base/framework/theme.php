@@ -3,19 +3,21 @@
     class MilkTheme extends MilkFramework {
         public $streams = array();
 
-        static public function getTheme($theme) {
+        public function getTheme($ctrl) {
             static $themes = array();
 
+            $theme = MilkTools::ifNull($ctrl->theme, $ctrl->module->theme);
             if (isset($themes[$theme])) {
                 return $themes[$theme];
             } else if (
-                ($theme == 'standard' && MilkLauncher::load(MILK_BASE_DIR, 'theme', $theme . '.php')) ||
-                MilkLauncher::load(MILK_EXT_DIR, 'theme', $theme . '.php')
+                ($theme == 'standard' && require_once(MilkTools::mkPath(MILK_BASE_DIR, 'theme', $theme . '.php'))) ||
+                require_once(MilkTools::mkPath(MILK_EXT_DIR, 'theme', $theme . '.php'))
             ) {
                 $classname = $theme . '_MilkTheme';
                 if (class_exists($classname) && is_subclass_of($classname, 'MilkTheme')) {
                     $class = new $classname();
                     $themes[$theme] = $class;
+                    $themes[$theme]->streams =& $this->streams;
                     return $class;
                 } else {
                     trigger_error('MilkTheme::getTheme() - Unable to find MilkTheme class for ' . $theme, E_USER_ERROR);
@@ -54,9 +56,22 @@
             }
         }
 
+        public function deliver($ctrl) {
+            if ($theme = $this->getTheme($ctrl)) {
+                array_push($this->streams, array());
+                $ctrl->deliver($theme);
+                foreach ($this->streams[count($this->streams)-1] as $key => $vals) {
+                    foreach ($vals as $val) {
+                        $this->put($key, $val);
+                    }
+                }
+                array_pop($this->streams);
+            }
+        }
+
         public function deliverChildren($ctrl) {
             foreach ($ctrl->controls as $control) {
-                $control->deliver();
+                $this->deliver($control);
             }
         }
 

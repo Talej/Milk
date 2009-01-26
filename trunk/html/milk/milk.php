@@ -180,4 +180,12 @@
                 return FALSE;
             }
         }
+
+        public function addControlSet($name) {
+            if ($this->load(MILK_EXT_DIR, 'control', $name . '.php')) {
+                return TRUE;
+            }
+
+            return FALSE;
+        }
     }

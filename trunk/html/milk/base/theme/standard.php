@@ -53,8 +53,8 @@
         public function VerticalBox($ctrl) {
             $str = '<div class="verticalbox"><table>';
             foreach ($ctrl->controls as $control) {
-                $control->deliver();
-                $str.= '<tr><td>' . $control->_theme->get('xhtml') . '</td></tr>';
+                $control->deliver($this);
+                $str.= '<tr><td>' . $this->get('xhtml') . '</td></tr>';
             }
             $str.= '</table></div>';
 
@@ -64,7 +64,7 @@
         public function HorizontalBox($ctrl) {
             $str = '<div class="horizontalbox"><table><tr>';
             foreach ($ctrl->controls as $control) {
-                $control->deliver();
+                $control->deliver($this);
                 $str.= '<td>' . $control->_theme->get('xhtml') . '</td>';
             }
             $str.= '</tr></table></div>';
