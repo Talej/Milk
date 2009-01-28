@@ -96,7 +96,7 @@
                 if (is_callable($cb)) {
                     call_user_func($cb, $this);
                 } else {
-                    trigger_error('MilkControl::deliver() - Unable to find delivery method for ' . $cb[1] . ' in ' . $t . ' theme', E_USER_ERROR);
+                    trigger_error('MilkControl::deliver() - Unable to find delivery method for ' . $cb[1] . ' in ' . get_class($theme) . ' theme', E_USER_ERROR);
                     exit;
                 }
             }

@@ -143,7 +143,7 @@
             if ($fp = fopen($cachefile, 'w+')) {
                 $gzdata = '';
                 foreach ($this->files as $file) {
-                    $webfile = mkpath($_SERVER['DOCUMENT_ROOT'], $file);
+                    $webfile = MilkTools::mkPath($_SERVER['DOCUMENT_ROOT'], $file);
                     if (file_exists($webfile) && is_readable($webfile)) {
                         if ($data = call_user_func($cb, file_get_contents($webfile))) {
                             $gzdata.= $data;

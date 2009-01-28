@@ -2,6 +2,10 @@
 
     class standard_MilkTheme extends MilkTheme {
 
+        public function init() {
+            $this->includecss('/milk/base/theme/standard/css/style.css');
+        }
+
         public function xhtmlDoc($title=NULL) {
             $str = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"\n"
                  . "     \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"
@@ -30,7 +34,7 @@
         }
 
         public function HTML($ctrl) {
-            $this->put($ctrl->value, $str);
+            $this->put('xhtml', $ctrl->value);
         }
 
         public function Image($ctrl) {
@@ -53,7 +57,7 @@
         public function VerticalBox($ctrl) {
             $str = '<div class="verticalbox"><table>';
             foreach ($ctrl->controls as $control) {
-                $control->deliver($this);
+                $this->deliver($control);
                 $str.= '<tr><td>' . $this->get('xhtml') . '</td></tr>';
             }
             $str.= '</table></div>';
@@ -64,8 +68,8 @@
         public function HorizontalBox($ctrl) {
             $str = '<div class="horizontalbox"><table><tr>';
             foreach ($ctrl->controls as $control) {
-                $control->deliver($this);
-                $str.= '<td>' . $control->_theme->get('xhtml') . '</td>';
+                $this->deliver($control);
+                $str.= '<td>' . $this->get('xhtml') . '</td>';
             }
             $str.= '</tr></table></div>';
 

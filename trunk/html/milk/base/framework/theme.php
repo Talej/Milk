@@ -3,6 +3,14 @@
     class MilkTheme extends MilkFramework {
         public $streams = array();
 
+        public function __construct() {
+            $this->addHook('init');
+            $cb = array($this, 'init');
+            $this->addHookHandler('init', $cb);
+        }
+
+        public function init() { }
+
         public function getTheme($ctrl) {
             static $themes = array();
 
@@ -59,6 +67,7 @@
         public function deliver($ctrl) {
             if ($theme = $this->getTheme($ctrl)) {
                 array_push($this->streams, array());
+                $theme->execHook('init');
                 $ctrl->deliver($theme);
                 foreach ($this->streams[count($this->streams)-1] as $key => $vals) {
                     foreach ($vals as $val) {
@@ -89,7 +98,7 @@
 
         public function includes() {
             $str = '';
-
+define('CFG_DEBUG_ENABLED', TRUE); // TODO: Remove me
             $jsfiles = array_unique($this->get('includejs', NULL));
             $cachedjs = FALSE;
             if ((!defined('CFG_DEBUG_ENABLED') || !CFG_DEBUG_ENABLED) && !empty($jsfiles)) {
