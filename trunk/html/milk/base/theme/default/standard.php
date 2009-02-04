@@ -1,6 +1,6 @@
 <?php
 
-    class standard_MilkTheme extends MilkTheme {
+    class default_MilkTheme extends MilkTheme {
 
         public function init() {
             $this->includecss('/milk/base/theme/standard/css/style.css');
@@ -49,6 +49,12 @@
                  . '/>'
                  . '</div>';
 
+            $this->put('xhtml', $str);
+        }
+
+        public function Spacer($ctrl) {
+            $str = '<div class="spacer"></div>';
+            
             $this->put('xhtml', $str);
         }
 

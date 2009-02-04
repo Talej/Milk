@@ -38,6 +38,10 @@
         }
     }
 
+    class Spacer_MilkControl extends MilkControl {
+    
+    }
+
     class Terminator_MilkControl extends MilkControl {
         public $url    = NULL;
         public $reload = TRUE;

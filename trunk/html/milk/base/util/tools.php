@@ -1,6 +1,15 @@
 <?php
 
+
     class MilkTools {
+
+        static public function isId($val) {
+            if ((is_int($val) || (is_string($val) && ctype_digit($val))) && (int)$val > 0) {
+                return TRUE;
+            }
+
+            return FALSE;
+        }
 
         static public function ifNull($arg1, $arg2) {
             $args = func_get_args();

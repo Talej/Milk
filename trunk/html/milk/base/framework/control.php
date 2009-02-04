@@ -8,7 +8,8 @@
         public $controls = array();
         public $request;
         public $theme;
-        public $_theme;
+        public $connections = array();
+        public $slotConnections = array();
 
         public function __construct($parent, $id=NULL) {
             $this->parent = $parent;
@@ -100,5 +101,47 @@
                     exit;
                 }
             }
+        }
+
+        public function connect($signal, $target, $slot, $args=NULL) {
+            if (!$this->hasSignal($signal)) trigger_error('MilkControl::connect() - ' . get_class($this) . ' control does not have a ' . $signal . ' signal', E_USER_ERROR);
+            if ($target instanceof MilkControl) {
+                if (!$target->hasSlot($slot)) trigger_error('MilkControl::connect() - ' . get_class($target) . ' control does not have a ' . $slot . ' slot', E_USER_ERROR);
+            } else if (
+                $target != MILK_SLOT_SAMEWIN &&
+                $target != MILK_SLOT_NEWWIN &&
+                $target != MILK_SLOT_CHILDWIN &&
+                $target != MILK_SLOT_MODALWIN &&
+                $target != MILK_SLOT_LAUNCHER &&
+                $target != MILK_SLOT_AJAX
+            ) {
+                trigger_error('MilkControl::connect() - ' . $target . ' is not a valid connection target', E_USER_ERROR);
+            } else if ($target != MILK_SLOT_LAUNCHER && (!is_array($args) || !isset($args['modurl']))) {
+                if (!$this->module->hasAction($slot)) trigger_error('MilkControl::connect() - action ' . $slot . ' is not a valid slot', E_USER_ERROR);
+            }
+
+            $conn = new MilkConnection($this, $signal, $target, $slot, $args);
+            $this->connections[] = $conn;
+            $target->slotConnections[] = $conn;
+        }
+
+        public function hasSignal($signal) {
+            return (in_array($signal, $this->signals) || $this->dynamicsignals ? TRUE : FALSE);
+        }
+
+        public function hasSlot($slot) {
+            return (in_array($slot, $this->slots) || $this->dynamicslots ? TRUE : FALSE);
+        }
+
+        public function hasConnected($signal) {
+            if ($this->hasSignal($signal)) {
+                foreach ($this->connections as $conn) {
+                    if ($conn->signal == $signal) {
+                        return TRUE;
+                    }
+                }
+            }
+
+            return FALSE;
         }
     }

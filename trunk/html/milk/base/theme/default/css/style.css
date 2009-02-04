@@ -1,0 +1,25 @@
+
+    .text {
+        position:relative;
+        margin-bottom:10px;
+    }
+
+    .label {
+        position:relative;
+        font-weight:bold;
+        margin-top:5px;
+    }
+
+    .horizontalbox table {
+        width:100%;
+        border-collapse:collapse;
+    }
+
+    .horizontalbox table td {
+        vertical-align:top;
+    }
+
+    .verticalbox table {
+        width:100%;
+        border-collapse:collapse;
+    }

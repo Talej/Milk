@@ -42,7 +42,7 @@
          * @param string $agentstr optional param, the agent string to use. If not passed will default to $_SERVER['HTTP_USER_AGENT']
          */
         function __construct($agentstr=NULL) {
-            $this->agentstr = ifnull($agentstr, $_SERVER['HTTP_USER_AGENT']);
+            $this->agentstr = MilkTools::ifNull($agentstr, $_SERVER['HTTP_USER_AGENT']);
 
             if ($parts = $this->parse()) {
                 $this->arch      = $parts['arch'];

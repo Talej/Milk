@@ -18,8 +18,8 @@
             if (isset($themes[$theme])) {
                 return $themes[$theme];
             } else if (
-                ($theme == 'standard' && require_once(MilkTools::mkPath(MILK_BASE_DIR, 'theme', $theme . '.php'))) ||
-                require_once(MilkTools::mkPath(MILK_EXT_DIR, 'theme', $theme . '.php'))
+                ($theme == 'default' && require_once(MilkTools::mkPath(MILK_BASE_DIR, 'theme', $theme, $theme . '.php'))) ||
+                require_once(MilkTools::mkPath(MILK_EXT_DIR, 'theme', $theme, $theme . '.php'))
             ) {
                 $classname = $theme . '_MilkTheme';
                 if (class_exists($classname) && is_subclass_of($classname, 'MilkTheme')) {

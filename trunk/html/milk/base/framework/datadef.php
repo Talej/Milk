@@ -12,7 +12,7 @@
     define('DD_TYPE_DATE',      $i++);
     define('DD_TYPE_DATETIME',  $i++);
     define('DD_TYPE_TIME',      $i++);
-    define('DD_TYPE_DEF',    $i++);
+    define('DD_TYPE_DEF',       $i++);
     define('DD_TYPE_EMAIL',     $i++);
     define('DD_TYPE_CHOOSER',   $i++);
     define('DD_TYPE_FILE',      $i++);
@@ -336,7 +336,7 @@
             if (is_null($pk)) $pk = $this->getPk();
             if (!$this->isPk($pk)) return FALSE;
             foreach ($pk as $val) {
-                if (!MilkValidate::_isnull($val)) {
+                if (!MilkValidate::isNull($val)) {
                     return FALSE;
                 }
             }

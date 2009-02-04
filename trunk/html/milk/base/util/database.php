@@ -99,16 +99,14 @@
                 $dirs = array(
                     @$_SERVER['DOCUMENT_ROOT'],
                     @$_ENV['HOME'],
-                    HOL_SYSDIR,
-                    mkpath(HOL_SYSDIR, '..'),
                     '~/'
                 );
 
                 $path = NULL;
                 foreach ($dirs as $dir) {
-                    if (($path = mkpath($dir, '.my.cnf')) && file_exists($path) && is_readable($path)) {
+                    if (($path = MilkTools::mkPath($dir, '.my.cnf')) && file_exists($path) && is_readable($path)) {
                         break;
-                    } else if (($path = mkpath($dir, 'my.cnf')) && file_exists($path) && is_readable($path)) {
+                    } else if (($path = MilkTools::mkPath($dir, 'my.cnf')) && file_exists($path) && is_readable($path)) {
                         break;
                     } else {
                         $path = NULL;
@@ -132,7 +130,7 @@
          * @return string the built DSN string
          */
         public function getDSN() {
-            $str = strtolower($this->type) . ":dbname={$this->name};host=" . ifnull($this->host, '127.0.0.1');
+            $str = strtolower($this->type) . ":dbname={$this->name};host=" . MilkTools::ifNull($this->host, '127.0.0.1');
             if ($this->port !== NULL) $str.= ";port={$this->port}";
 
             return $str;
