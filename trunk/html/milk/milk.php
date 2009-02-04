@@ -113,10 +113,15 @@
             $this->load(MILK_BASE_DIR, 'framework', 'module.php');
             $this->load(MILK_BASE_DIR, 'framework', 'control.php');
             $this->load(MILK_BASE_DIR, 'framework', 'datadef.php');
+            $this->load(MILK_BASE_DIR, 'framework', 'connection.php');
+            $this->load(MILK_BASE_DIR, 'framework', 'validate.php');
             $this->load(MILK_BASE_DIR, 'framework', 'theme.php');
 
             // include all required files
             $this->load(MILK_BASE_DIR, 'util', 'tools.php');
+            $this->load(MILK_BASE_DIR, 'util', 'url.php');
+            $this->load(MILK_BASE_DIR, 'util', 'sql.php');
+            $this->load(MILK_BASE_DIR, 'util', 'useragent.php');
 
             // load config
             $this->loadDir(MILK_APP_DIR, 'config');
