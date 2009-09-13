@@ -2,11 +2,13 @@
 
     class MilkTheme extends MilkFramework {
         public $streams = array();
+        public $mod;
 
-        public function __construct() {
+        public function __construct($mod) {
             $this->addHook('init');
             $cb = array($this, 'init');
             $this->addHookHandler('init', $cb);
+            $this->mod = $mod;
         }
 
         public function init() { }
@@ -23,7 +25,7 @@
             ) {
                 $classname = $theme . '_MilkTheme';
                 if (class_exists($classname) && is_subclass_of($classname, 'MilkTheme')) {
-                    $class = new $classname();
+                    $class = new $classname($this->mod);
                     $themes[$theme] = $class;
                     $themes[$theme]->streams =& $this->streams;
                     return $class;
@@ -85,7 +87,16 @@
         }
 
         public function entitise($v) {
-            return htmlentities($v, ENT_QUOTES, 'UTF-8');
+            if ($v instanceof MilkControl) {
+                $this->deliver($v);
+                return $this->get('xhtml');
+            } else if ($v instanceof MilkDateTime) {
+                return $v->toString(MilkTools::ifDef('CFG_DATETIME_FORMAT', NULL));
+            } else if ($v instanceof MilkDate) {
+                return $v->toString(MilkTools::ifDef('CFG_DATE_FORMAT', NULL));
+            } else {
+                return htmlentities($v, ENT_QUOTES, 'UTF-8');
+            }
         }
 
         public function includejs($js) {
@@ -98,19 +109,27 @@
 
         public function includes() {
             $str = '';
-define('CFG_DEBUG_ENABLED', TRUE); // TODO: Remove me
+
             $jsfiles = array_unique($this->get('includejs', NULL));
             $cachedjs = FALSE;
             if ((!defined('CFG_DEBUG_ENABLED') || !CFG_DEBUG_ENABLED) && !empty($jsfiles)) {
                 include_once(MilkTools::mkPath(MILK_BASE_DIR, 'util', 'compress.php'));
 
-                $compress = new FLQCompress(FLQCOMPRESS_TYPE_JS, $jsfiles);
+                $cachefiles = array();
+                foreach ($jsfiles as $key => $jsfile) {
+                    if (strtolower(substr($jsfile, 0, 4)) != 'http') {
+                        $cachefiles[] = $jsfile;
+                        unset($jsfiles[$key]);
+                    }
+                }
+                $compress = new FLQCompress(FLQCOMPRESS_TYPE_JS, $cachefiles);
                 if ($jscache = $compress->exec()) {
                     $str.= "<script type=\"text/javascript\" language=\"Javascript1.1\" src=\"" . $this->entitise($jscache) . "\"></script>\n";
                     $cachedjs = TRUE;
                 }
             }
-            if (!$cachedjs) {
+//             if (!$cachedjs) {
+            if (!empty($jsfiles)) {
                 foreach ($jsfiles as $jsfile) {
                     $str.= "<script type=\"text/javascript\" language=\"Javascript1.1\" src=\"" . $this->entitise($jsfile) . "\"></script>\n";
                 }
@@ -155,5 +174,30 @@ define('CFG_DEBUG_ENABLED', TRUE); // TODO: Remove me
                  . "</script>\n";
 
             return $str;
+        }
+
+        public function getID($ctrl, $prefix='mlk-') {
+            return $prefix . implode('-', (array)$ctrl->id);
+        }
+
+        public function jsControl($ctrl, $props=NULL) {
+            $str = 'Milk.add(' . MilkTools::jsEncode($ctrl->name) . ', '
+                 . MilkTools::jsEncode($this->getID($ctrl, '')) . ', '
+                 . MilkTools::jsEncode((array)$props, JSTYPE_HASH, FALSE) . ').init();';
+
+            $this->put('constructjs', $str);
+
+            if ($ctrl->connections) {
+                $str = '';
+                foreach ($ctrl->connections as $conn) {
+                    $str.= ' connect(' . MilkTools::jsEncode($conn->signal) . ', '
+                         . MilkTools::jsEncode($conn->dest instanceof MilkControl ? $this->getID($conn->dest, '') : $conn->dest) . ', '
+                         . MilkTools::jsEncode($conn->slot) . ', '
+                         . MilkTools::jsEncode($conn->args) . ');';
+                }
+                $str = ' with (Milk.get(' . MilkTools::jsEncode($this->getID($ctrl, '')) . ')) {' . $str . '}';
+
+                $this->put('connectjs', $str);
+            }
         }
     }

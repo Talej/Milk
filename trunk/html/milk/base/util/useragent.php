@@ -90,11 +90,12 @@
                 $parts['app'] = $m[1];
                 $parts['appver'] = $m[2];
                 $parts['appmajver'] = $m[2];
-            } else if (preg_match('/Mozilla\/[0-9\.]+\s\(([^;]+);\s*[^;];\s*([^;]+);[^\)]+\)\s*([^\s]+)\/([0-9]+)\s*(?:[^\s]*\s+)?([^\s]+)\/(([0-9]+)\.([0-9\.\-]+))$/i', $this->agentstr, $m)) {
+            } else if (preg_match('/Mozilla\/[0-9\.]+\s\(([^;]+);\s*[^;];\s*([^;]+);[^\)]+\)\s*([^\s]+)\/([0-9]+)\s*(?:[^\s]*\s+)?([^\s]+)\/(([0-9]+)\.([0-9\.\-]+)).*/i', $this->agentstr, $m)) {
                 //Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.3) Gecko/2008092510 Ubuntu/8.04 (hardy) Firefox/3.0.3
                 // matches firefox agent string. For example:
                 // Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3
                 // Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9) Gecko/2008061015 Firefox/3.0
+                // Mozilla/5.0 (Windows; U; Windows NT 6.0; en-US; rv:1.9.0.8) Gecko/2009032609 Firefox/3.0.8 (.NET CLR 3.5.30729)
                 $parts['arch'] = $m[1];
                 $parts['os'] = $m[2];
                 // TODO: How to get osver
@@ -126,13 +127,13 @@
 //             } else if (preg_match('//', $this->agentstr, $m)) {
                 // Matches Konqueror
                 // Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.9 (like Gecko) (Kubuntu)
-            } else if (preg_match('/([^\/]+)\/(([0-9]+)\.([0-9\.]+))\s*\((([^\s]+)[^;]+)[^\)]+\)\s*([^\/]+)\/([0-9\.]+)/i', $this->agentstr, $m)) {
+            } else if (preg_match('/([^\/]+)\/(([0-9]+)\.([0-9\.]+))\s*\((([^\s]+)[^;]+)[^\)]+\)(\s*([^\/]+)\/([0-9\.]+))?/i', $this->agentstr, $m)) {
                 // Matches opera
                 // Opera/9.62 (Windows NT 5.1; U; en) Presto/2.1.1
-               $parts['arch'] = $m[6];
+                $parts['arch'] = $m[6];
                 $parts['os'] = $m[5];
-                $parts['eng'] = $m[7];
-                $parts['engver'] = $m[8];
+                if (isset($m[8])) $parts['eng'] = $m[8];
+                if (isset($m[9])) $parts['engver'] = $m[9];
                 $parts['app'] = $m[1];
                 $parts['appver'] = $m[2];
                 $parts['appmajver'] = $m[3];

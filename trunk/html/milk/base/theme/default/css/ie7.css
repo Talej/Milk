@@ -1,0 +1,18 @@
+
+    .datebox, .datetimebox {
+        margin:0px 2px;
+    }
+
+    .datebox-cal {
+        margin-left:1px;
+        top:22px;
+        right:-10px;
+    }
+
+    .horizontalbox table.hbox-table {
+        position:relative; /* z-index fix for datebox calendar */
+    }
+
+    .horizontalbox table td {
+        position:static;
+    }

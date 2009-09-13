@@ -1,21 +1,21 @@
 <?php
 
     $i=0;
-    define('DD_TYPE_ID',        $i++);
-    define('DD_TYPE_PKID',      $i++);
-    define('DD_TYPE_TEXT',      $i++);
-    define('DD_TYPE_PASSWORD',  $i++);
-    define('DD_TYPE_MULTILINE', $i++);
-    define('DD_TYPE_BOOL',      $i++);
-    define('DD_TYPE_NUMBER',    $i++);
-    define('DD_TYPE_LIST',      $i++);
-    define('DD_TYPE_DATE',      $i++);
-    define('DD_TYPE_DATETIME',  $i++);
-    define('DD_TYPE_TIME',      $i++);
-    define('DD_TYPE_DEF',       $i++);
-    define('DD_TYPE_EMAIL',     $i++);
-    define('DD_TYPE_CHOOSER',   $i++);
-    define('DD_TYPE_FILE',      $i++);
+    define('DD_TYPE_ID',        ++$i);
+    define('DD_TYPE_PKID',      ++$i);
+    define('DD_TYPE_TEXT',      ++$i);
+    define('DD_TYPE_PASSWORD',  ++$i);
+    define('DD_TYPE_MULTILINE', ++$i);
+    define('DD_TYPE_BOOL',      ++$i);
+    define('DD_TYPE_NUMBER',    ++$i);
+    define('DD_TYPE_LIST',      ++$i);
+    define('DD_TYPE_DATE',      ++$i);
+    define('DD_TYPE_DATETIME',  ++$i);
+    define('DD_TYPE_TIME',      ++$i);
+    define('DD_TYPE_DEF',       ++$i);
+    define('DD_TYPE_EMAIL',     ++$i);
+    define('DD_TYPE_CHOOSER',   ++$i);
+    define('DD_TYPE_FILE',      ++$i);
 
     define('DD_ATTR_TYPE',           'type');
     define('DD_ATTR_REQUIRED',   'required');
@@ -33,6 +33,7 @@
     define('DD_ATTR_CURRENCY',   'currency');
     define('DD_ATTR_FILETYPE',   'filetype');
     define('DD_ATTR_EXTENSIONS',     'exts');
+    define('DD_ATTR_PREFIX',       'prefix');
 
     class dataDef {
         public $module;
@@ -186,8 +187,8 @@
             $this->errors = array();
             $this->savedata = array();
             $this->subsavedata = array();
-//             $v = new MilkValidate();
-//             $v->validate($this, $request);
+            $v = new MilkValidate();
+            $v->validate($this, $request);
         }
 
         public function save() {
@@ -197,7 +198,7 @@
 
             if (strlen($this->table) == 0) trigger_error('dataDef::save() - Can not save data without a table name', E_USER_ERROR);
 
-            if (empty($this->errors)) {
+            if (empty($this->module->errors)) {
                 if (is_array($this->savedata) && !empty($this->savedata)) {
                     if ($this->isNewPk()) {
                         if (($pk = $this->populatePk($this->module->db->insert($this->table, $this->module->db->quotearray($this->savedata), FALSE, FALSE))) !== FALSE) {
@@ -346,9 +347,13 @@
 
         public function isValidPk($pk=NULL) {
             if (is_null($pk)) $pk = $this->getPk();
-            if (!$this->isPk($pk)) return FALSE;
+            if (!$this->isPk($pk)) {
+                return FALSE;
+            }
             foreach ($pk as $key => $val) {
-                if (!MilkValidate::any($val, $this->fields[$key])) return FALSE;
+                if (!MilkValidate::any($val, $this->fields[$key])) {
+                    return FALSE;
+                }
             }
 
             return TRUE;

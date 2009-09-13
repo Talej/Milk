@@ -2,6 +2,7 @@
 
     class MilkControl extends MilkFrameWork {
         public $id;
+        public $name;
         public $parent;
         public $module;
         public $prev;
@@ -10,6 +11,10 @@
         public $theme;
         public $connections = array();
         public $slotConnections = array();
+        public $flex = 0;
+        public $signals = array();
+        public $slots   = array();
+        public $strictConns = TRUE;
 
         public function __construct($parent, $id=NULL) {
             $this->parent = $parent;
@@ -19,7 +24,8 @@
                 $this->module = $this->parent->module;
             }
             $this->id     = ($id === NULL ? $this->getID() : (array)$id);
-            $this->name   = get_class($this);
+            $this->name   = str_replace('_MilkControl', '', get_class($this));
+            
             $this->setRequest();
         }
 
@@ -126,11 +132,26 @@
         }
 
         public function hasSignal($signal) {
-            return (in_array($signal, $this->signals) || $this->dynamicsignals ? TRUE : FALSE);
+            return (in_array($signal, $this->signals) || !$this->strictConns ? TRUE : FALSE);
         }
 
         public function hasSlot($slot) {
-            return (in_array($slot, $this->slots) || $this->dynamicslots ? TRUE : FALSE);
+            return (in_array($slot, $this->slots) || !$this->strictConns ? TRUE : FALSE);
+        }
+
+        public function getConnections($signal) {
+            if ($this->hasSignal($signal)) {
+                $conns = array();
+                foreach ($this->connections as $conn) {
+                    if ($conn->signal == $signal) {
+                        $conns[] = $conn;
+                    }
+                }
+
+                return $conns;
+            }
+
+            return FALSE;
         }
 
         public function hasConnected($signal) {
@@ -140,6 +161,14 @@
                         return TRUE;
                     }
                 }
+            }
+
+            return FALSE;
+        }
+
+        public function hasAnyConnected() {
+            foreach ($this->signals as $signal) {
+                if ($this->hasConnected($signal)) return TRUE;
             }
 
             return FALSE;

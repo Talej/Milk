@@ -248,6 +248,8 @@
                 return 'NULL';
             } else if (is_bool($var)) {
                 return ($var ? 1 : 0);
+            } else if (is_object($var) && method_exists($var, 'toDBString')) {
+                return $var->toDBString();
             } else {
                 return parent::quote($var);
             }

@@ -20,8 +20,8 @@
         }
 
         public static function fromRequest() {
-            $data = HTTP::requestInfo();
-            $url = new URL();
+            $data = self::requestInfo();
+            $url = new FLQURL();
             $url->protocol  = $data['scheme'];
             $url->host      = $data['host'];
             $url->port      = $data['port'];
@@ -41,9 +41,10 @@
                 'anchor'   => NULL
             );
             if ($tmp = parse_url($url)) {
-                if (isset($tmp['protocol'])) $parts['protocol'] = $tmp['protocol'];
-                if (isset($tmp['host']))     $parts['host']     = $tmp['host'];
-                if (isset($tmp['port']))     $parts['port']     = $tmp['port'];
+                $req = self::fromRequest();
+                $parts['protocol'] = (isset($tmp['protocol']) ? $tmp['protocol'] : $req->protocol);
+                $parts['host']     = (isset($tmp['host']) ? $tmp['host'] : $req->host);
+                $parts['port']     = (isset($tmp['port']) ? $tmp['port'] : $req->port);
                 if (isset($tmp['path']))     $parts['path']     = $tmp['path'];
                 if (isset($tmp['query']))    $parts['args']     = self::parseArgs($tmp['query']);
                 if (isset($tmp['fragment'])) $parts['anchor']   = $tmp['fragment'];
@@ -95,7 +96,7 @@
         }
 
         public function isThisHost() {
-            $host = HTTP::requestInfo();
+            $host = self::requestInfo();
             if (($host['host'] == $this->host && $host['port'] == $this->port) || $this->host === NULL) {
                 if ($host['scheme'] == $this->protocol || $this->protocol === NULL) {
                     return TRUE;
@@ -129,8 +130,55 @@
         }
 
         public function redirect() {
-            $url = $this->toString();
+            $url = $this->toAbsoluteString();
             header("Location: {$url}");
             exit;
         }
+
+        static public function requestInfo() {
+            $info = array(0 => NULL, 1 => NULL, 2 => NULL, 'scheme' => NULL, 'host' => NULL, 'port' => NULL);
+            $forwarded_host = (array_key_exists('HTTP_X_FORWARDED_HOST', $_SERVER) ? substr($_SERVER['HTTP_X_FORWARDED_HOST'], 0, ifnot(strpos($_SERVER['HTTP_X_FORWARDED_HOST'], ','),strlen($_SERVER['HTTP_X_FORWARDED_HOST']))) : '');
+
+            // get the host
+            if (preg_match('/^([^:]+)/i', $forwarded_host, $match)) {
+                $info['host'] = $match[1];
+                $info[1]      = $match[1];
+            } else if (preg_match('/^([^:]+)/i', $_SERVER['HTTP_HOST'], $match)) {
+                $info['host'] = $match[1];
+                $info[1]      = $match[1];
+            }
+
+            // get the port
+            if (preg_match('/:([0-9]+)$/', $forwarded_host, $match)) {
+                $info['port'] = $match[1];
+                $info[2]      = $match[1];
+            } else if (array_key_exists('HTTP_X_FORWARDED_PROTO', $_SERVER) && preg_match('/^https/i', $_SERVER['HTTP_X_FORWARDED_PROTO'])) {
+                $info['port'] = 443;
+                $info[2]      = 443;
+            } else if (preg_match('/:([0-9]+)$/', $_SERVER['HTTP_HOST'], $match)) {
+                $info['port'] = $match[1];
+                $info[2]      = $match[1];
+            } else if (array_key_exists('SERVER_PORT', $_SERVER)) {
+                $info['port'] = $_SERVER['SERVER_PORT'];
+                $info[2]      = $_SERVER['SERVER_PORT'];
+            }
+
+            // get the scheme
+            if (array_key_exists('HTTP_X_FORWARDED_PROTO', $_SERVER) && preg_match('/^https?/i', $_SERVER['HTTP_X_FORWARDED_PROTO'], $match)) {
+                $info['scheme'] = strtolower($match[0]);
+                $info[0]        = strtolower($match[0]);
+            } else if ((array_key_exists('SSL', $_ENV) && strtobool($_ENV['SSL'])) || (array_key_exists('HTTPS', $_ENV) && strtobool($_ENV['HTTPS']))) {
+                $info['scheme'] = 'https';
+                $info[0]        = 'https';
+            } else if ($info['port'] == 443) { // If port is 443 assume SSL
+                $info['scheme'] = 'https';
+                $info[0]        = 'https';
+            } else {
+                $info['scheme'] = 'http';
+                $info[0]        = 'http';
+            }
+
+            return $info;
+        }
     }
+    

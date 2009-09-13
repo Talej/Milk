@@ -283,9 +283,9 @@
          */
         public function toString() {
             $SQL = '';
-            if ($this->tablename !== NULL) {
+            if ($this->table !== NULL) {
                 $SQL = "SELECT {$this->options[NULL]} {$this->cols[NULL]}\n"
-                     . "  FROM {$this->tablename} {$this->extrajoin[NULL]}\n"
+                     . "  FROM {$this->table} {$this->extrajoin[NULL]}\n"
                      . " {$this->where[NULL]}\n"
                      . " {$this->groupby[NULL]} {$this->having[NULL]}\n"
                      . " {$this->orderby[NULL]} {$this->limit[NULL]}\n";

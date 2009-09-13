@@ -143,7 +143,7 @@
             if ($fp = fopen($cachefile, 'w+')) {
                 $gzdata = '';
                 foreach ($this->files as $file) {
-                    $webfile = MilkTools::mkPath($_SERVER['DOCUMENT_ROOT'], $file);
+                    $webfile = MilkTools::mkPath(MILK_PATH, $file);
                     if (file_exists($webfile) && is_readable($webfile)) {
                         if ($data = call_user_func($cb, file_get_contents($webfile))) {
                             $gzdata.= $data;
@@ -181,7 +181,7 @@
          */
         public function hasChangedSince($time) {
             foreach ($this->files as $file) {
-                $webfile = MilkTools::mkPath($_SERVER['DOCUMENT_ROOT'], $file);
+                $webfile = MilkTools::mkPath(MILK_PATH, $file);
                 if (!is_readable($webfile) || filemtime($webfile) > $time) {
                     return TRUE;
                 }
@@ -208,8 +208,22 @@
                 $expires = MilkTools::ifDef('CFG_CACHE_EXPIRE', 86400*7); // default 7 days
 
                 ini_set('zlib.output_compression', 'Off');
-                HTTP::setStatus(200);
-                HTTP::setIMS($mtime);
+                MilkLauncher::http_set_status(200);
+                if (array_key_exists('HTTP_IF_MODIFIED_SINCE', $_SERVER)) {
+                    $ims = $_SERVER['HTTP_IF_MODIFIED_SINCE'];
+                    if (
+                        preg_match('/[a-zA-Z]{3}, [0-9]{1,2} [A-Za-z]+ [0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2} GMT/', $ims)         // RFC 1123
+                        || preg_match('/[a-zA-Z]{3,6}day, [0-9]{1,2}-[A-Za-z]+-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} GMT/', $ims) // RFC 850
+                        || preg_match('/[a-zA-Z]{3} [a-zA-Z]{3} [0-9]{1,2} [0-9]{2}:[0-9]{2}:[0-9]{2} [0-9]{4}/', $ims)         // ANSI C asctime()
+                    ) {
+                        $ims = strtotime($ims);
+                        if ($mtime <= $ims) {
+                            MilkLauncher::http_set_status(304);
+                            exit;
+                        }
+                    }
+                }
+                header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $mtime) . ' GMT');
                 header('Pragma:');
                 header('Expires: ' . gmdate('D, d M Y H:i:s', time() + $expires) . ' GMT');
                 header('Cache-Control: max-age=' . $expires . ', private');

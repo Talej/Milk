@@ -2,19 +2,31 @@
 
     class MilkModule extends MilkFrameWork {
         public $defaultAction = 'act_index';
-        public $theme         = 'standard';
+        public $theme         = 'default';
         public $idSeq         = 0;
         public $idPrefix      = '';
         public $actions       = array();
         public $dataDefs      = array();
         public $errors        = array();
         public $history       = array();
+        public $URI;
         public $request;
         public $dataDef;
         public $rootControl;
 
         public function __construct() {
-            $this->request = $_REQUEST; // TODO: Correctly set the request (Get, post, files)
+            $this->request = $_REQUEST;
+
+            if (is_array($_FILES)) {
+                foreach (array_keys($_FILES) as $field) {
+                    $this->request[$field] =& $_FILES[$field];
+                }
+            }
+
+            $this->URI = new FLQURL($_SERVER['PHP_SELF']);
+            foreach ($_GET as $key => $val) $this->URI->addArgument($key, $val);
+            foreach ($_POST as $key => $val) $this->URI->addArgument($key, $val);
+            $this->URI->delArgument('history');
 
             $this->addHook('prepare');
             $this->addHook('execute');
@@ -26,6 +38,15 @@
             $this->addHookHandler('execute', $cbe);
             $cbd = array($this, 'deliver');
             $this->addHookHandler('deliver', $cbd);
+
+            if (is_array($this->request) && isset($this->request['history'])) {
+                if (is_array($this->request['history'])) $this->history = array_values($this->request['history']);
+                unset($this->request['history']);
+            }
+            if (is_array($this->request) && isset($this->request['errors'])) {
+                if (is_array($this->request['errors'])) $this->errors = array_values($this->request['errors']);
+                unset($this->request['errors']);
+            }
 
             $this->setProp('ua', new FLQUserAgent());
         }
@@ -44,7 +65,8 @@
 
         public function deliver() {
             if ($this->rootControl instanceof MilkControl) {
-                $theme = new MilkTheme();
+                $this->history[] = $this->URI->toString();
+                $theme = new MilkTheme($this);
                 $theme->deliver($this->rootControl);
             } else {
                 trigger_error('MilkModule::deliver() - Can not deliver output without a root control set', E_USER_ERROR);
@@ -56,6 +78,7 @@
             $this->execHook('prepare');
             $this->execHook('execute');
             $this->execHook('deliver');
+            exit;
         }
 
         /**
@@ -147,7 +170,7 @@
             if (isset($this->dataDefs[$name])) {
                 return $this->dataDefs[$name];
             } else {
-                trigger_error('MilkModule::getDD() - A data definition named \'' . $name . '\' does not exist', E_USER_ERROR);
+                trigger_error('MilkModule::getDD() - A data definition named \'' . MilkTools::ifNull($name, 'NULL') . '\' does not exist', E_USER_ERROR);
             }
 
             return NULL;
@@ -169,6 +192,18 @@
             return FALSE;
         }
 
+        public function setHistory($key, $val=NULL) {
+            if (!empty($this->history)) {
+                $url = new FLQURL(end($this->history));
+                if ($val == NULL) {
+                    $url->delArgument($key);
+                } else {
+                    $url->addArgument($key, $val, TRUE);
+                }
+                $this->history[key($this->history)] = $url->toString();
+            }
+        }
+
         /**
          * go() redirects or reloads the screen by going back the specified number of steps in the history
          *
@@ -183,12 +218,12 @@
                 for ($i=0; $i < $steps; $i++) {
                     $newuri = array_pop($this->history);
                 }
-                $this->currentURI = new FLQURL($newuri);
+                $this->URI = new FLQURL($newuri);
 
                 // If we should redirect add the history and redirect
                 if ($redirect) {
-                    $this->currentURI->addArgument('history', $this->history);
-                    $this->currentURI->redirect();
+                    $this->URI->addArgument('history', $this->history);
+                    $this->URI->redirect();
                 }
 
                 // If we are not redirecting, merge the historical URI into the passed
@@ -200,16 +235,18 @@
                 $module->db            = $this->db;
                 $module->history       =& $this->history;
                 $module->errors        =& $this->errors;
-                $module->currentURI    = clone $this->currentURI;
+                $module->URI           = clone $this->URI;
                 $module->defaultAction = $this->defaultAction;
 
                 foreach ($this->request as $key => $val) {
-                    if ($key != 'act' && $key != 'actarg') $module->currentURI->addArgument($key, $val, TRUE);
+                    if ($key != 'act' && $key != 'actarg') $module->URI->addArgument($key, $val, TRUE);
                 }
-                $module->request = $module->currentURI->arguments;
-                $module->exec();
+
+                $module->request = $module->URI->arguments;
+                $module->run();
             } else {
-                $this->deliver($this->newControl('Terminator'));
+                $this->addControl($this->newControl('Terminator'));
+                $this->deliver();
                 exit;
             }
         }
@@ -252,8 +289,12 @@
             parent::__construct();
 
             // TODO: Add checking here
-            MilkLauncher::load(MILK_BASE_DIR, 'util', 'database.php');
-            $this->db = new Database();
+            if (isset($GLOBALS['db'])) {
+                $this->db = $GLOBALS['db'];
+            } else {
+                MilkLauncher::load(MILK_BASE_DIR, 'util', 'database.php');
+                $this->db = new Database();
+            }
         }
 
         /**
@@ -275,7 +316,7 @@
             if ($dd->isNewPk($pk)) {
                 $record = new StdClass();
                 foreach (array_keys($dd->fields) as $key) {
-                    $record->{$key} = $dd->getAttrib($key, DD_OPT_DEFAULT, NULL);
+                    $record->{$key} = $dd->getAttrib($key, DD_ATTR_DEFAULT, NULL);
                 }
             } else if ($dd->isValidPk($pk)) {
                 if ($record = $this->db->get($dd->table, $pk)) {
@@ -292,6 +333,24 @@
         }
 
         public function normaliserecord($dd, $record) {
+            foreach ($dd->fields as $key => $attribs) {
+                if (isset($record->{$key})) {
+                    switch ($attribs['type']) {
+                        case 'date':
+                            $tmp = $record->{$key};
+                            $record->{$key} = new MilkDate();
+                            $record->{$key}->fromDBString($tmp);
+                            break;
+
+                        case 'datetime':
+                            $tmp = $record->{$key};
+                            $record->{$key} = new MilkDateTime();
+                            $record->{$key}->fromDBString($tmp);
+                            break;
+                    }
+                }
+            }
+
             return $record;
         }
 
@@ -343,7 +402,7 @@
         public function save($datadef=NULL) {
             if ($datadef === NULL) $datadef = $this->dataDef;
             $dd = $this->getDD($datadef);
-            return $ds->save();
+            return $dd->save();
         }
 
         /**
