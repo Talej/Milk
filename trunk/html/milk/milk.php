@@ -107,6 +107,12 @@
     class MilkLauncher extends MilkFrameWork {
         public $module;
         protected $moduleName;
+        static protected $HTTPStatuses = array(
+            '200' => 'OK',
+            '304' => 'Not Modified',
+            '403' => 'Forbidden',
+            '404' => 'Not Found'
+        );
 
         public function __construct($mod) {
             // Load core framework classes
@@ -119,18 +125,20 @@
 
             // include all required files
             $this->load(MILK_BASE_DIR, 'util', 'tools.php');
+            $this->load(MILK_BASE_DIR, 'util', 'date.php');
             $this->load(MILK_BASE_DIR, 'util', 'url.php');
             $this->load(MILK_BASE_DIR, 'util', 'sql.php');
             $this->load(MILK_BASE_DIR, 'util', 'useragent.php');
 
             // load config
-            $this->loadDir(MILK_APP_DIR, 'config');
-            $this->loadDir(MILK_EXT_DIR, 'config');
-            $this->load(MILK_BASE_DIR, 'config', 'default.php');
+            $this->loadConfig();
 
             // Load base and extension controls
             $this->loadDir(MILK_BASE_DIR, 'control');
             $this->loadDir(MILK_EXT_DIR, 'control');
+
+            // Load all app library files
+            $this->loadDir(MILK_APP_DIR, 'lib');
 
             // load & execute module
             $this->moduleName = $mod;
@@ -152,7 +160,12 @@
             if (is_readable($dir = self::mkPath(func_get_args())) && ($dp = opendir($dir))) {
                 while (($file = readdir($dp)) !== FALSE) {
                     if ($file == '.' || $file == '..' || $file{0} == '.') continue;
-                    self::load($dir, $file);
+                    $path = self::mkPath($dir, $file);
+                    if (is_dir($path)) {
+                        self::loadDir($path);
+                    } else {
+                        self::load($dir, $file);
+                    }
                 }
             } else {
                 trigger_error('MilkLauncher::load() - Unable to load directory ' . $dir, E_USER_ERROR);
@@ -160,6 +173,12 @@
             }
 
             return FALSE;
+        }
+
+        public static function loadConfig() {
+            self::loadDir(MILK_APP_DIR, 'config');
+            self::loadDir(MILK_EXT_DIR, 'config');
+            self::load(MILK_BASE_DIR, 'config', 'default.php');
         }
 
         static public function mkPath($arg) {
@@ -170,6 +189,15 @@
             }
 
             return implode(DIR_SEP, $args);
+        }
+
+        static public function moduleExists($module) {
+            $file = self::mkPath(MILK_APP_DIR, 'module', strtolower($module) . '.php');
+            if (is_readable($file)) {
+                return TRUE;
+            }
+
+            return FALSE;
         }
 
         protected function loadModule() {
@@ -192,5 +220,54 @@
             }
 
             return FALSE;
+        }
+
+        static public function http_virtualise() {
+            global $PHP_SELF, $QUERY_STRING, $HTTP_SERVER_VARS, $HTTP_GET_VARS;
+
+            if  (@substr_compare(urldecode($_SERVER['REQUEST_URI']), $_SERVER['SCRIPT_NAME'], 0) !== 0) {
+                @list($_SERVER['PHP_SELF'], $_SERVER['QUERY_STRING']) = explode('?', $_SERVER['REQUEST_URI'], 2);
+                // Decode URI encoding
+                $_SERVER['PHP_SELF'] = urldecode($_SERVER['PHP_SELF']);
+                // Extract GET request parameters
+                parse_str($_SERVER['QUERY_STRING'], $_GET);
+
+                // Update HTTP_SERVER_VARS & HTTP_GET_VARS if configured
+                if (ini_get('register_long_arrays') || version_compare(PHP_VERSION, '5.0.0', '<')) {
+                    $HTTP_SERVER_VARS['PHP_SELF']     = $_SERVER['PHP_SELF'];
+                    $HTTP_SERVER_VARS['QUERY_STRING'] = $_SERVER['QUERY_STRING'];
+                    $HTTP_GET_VARS                    = $_GET;
+                }
+
+                // Update globals if configured
+                if (ini_get('register_globals')) {
+                    $PHP_SELF     = $_SERVER['PHP_SELF'];
+                    $QUERY_STRING = $_SERVER['QUERY_STRING'];
+                    // Re-import everything into the global scope, we can't just import
+                    // HTTP_GET_VARS as entries in it may have been overridden by
+                    // other types (eg HTTP_POST_VARS etc)
+                    // Suppress warning about the empty prefix
+                    @import_request_variables(ini_get('variables_order'), '');
+                }
+
+                // Reconstruct _SERVER in the correct order with the new _GET
+                // Don't use array_merge() here, it re-indexes numeric keys
+                foreach (str_split(ini_get('variables_order'), 1) as $type) {
+                    switch ($type) {
+                        case 'G': $_REQUEST = $_GET    + $_REQUEST; break;
+                        case 'P': $_REQUEST = $_POST   + $_REQUEST; break;
+                        case 'C': $_REQUEST = $_COOKIE + $_REQUEST; break;
+                    }
+                }
+
+                return TRUE;
+            } else {
+                return FALSE;
+            }
+        }
+
+        static public function http_set_status($status) {
+            $desc = (isset(self::$HTTPStatuses[$status]) ? self::$HTTPStatuses[$status] : NULL);
+            header($_SERVER['SERVER_PROTOCOL'] . ' ' . $status  . ' ' . $desc);
         }
     }
