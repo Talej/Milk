@@ -6,10 +6,21 @@
      * rewriting etc here (for example to map /myfile.html to the myfile module)
      */
 
-    define('MILK_PATH', dirname($_SERVER['SCRIPT_FILENAME']));
+    define('MILK_PATH', dirname(__FILE__));
     include(MILK_PATH . '/milk/milk.php');
 
     MilkLauncher::loadConfig();
+    MilkLauncher::http_virtualise();
 
-    $milk = new MilkLauncher('Home');
-    $milk->module->run();
+    if (preg_match('/milk(js|css)\/([a-f0-9]{32})\.(js|css)/', $_SERVER['PHP_SELF'], $m)) {
+        MilkLauncher::load(MILK_BASE_DIR, 'util', 'tools.php');
+        MilkLauncher::load(MILK_BASE_DIR, 'util', 'compress.php');
+
+        $compress = new FLQCompress($m[1]);
+        if (!$compress->output($m[2])) {
+            // throw an error 404 or similar
+        }
+    } else {
+        $milk = new MilkLauncher('Home');
+        $milk->module->run();
+    }
