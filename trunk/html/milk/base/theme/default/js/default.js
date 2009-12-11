@@ -5,7 +5,7 @@
         SLOT_SAMEWIN   : '_self',
         SLOT_NEWWIN    : '_blank',
         SLOT_CHILDWIN  : '_child',
-        SLOT_MODALWIN  : '_modal',
+        SLOT_LIGHTWIN  : '_light',
         SLOT_AJAX      : '_ajax',
         SLOT_LAUNCHER  : '_launcher',
         errors         : [],
@@ -40,16 +40,33 @@
     }
 
     Milk.mergeArgs = function () {
-        var args = {}
-        for (var i = 0; arguments[i]; i++) {
+        var args = {}, i, j
+        for (i = 0; arguments[i]; i++) {
             if (FLQ.isObj(arguments[i])) {
-                for (var j in arguments[i]) {
+                for (j in arguments[i]) {
                     if (!FLQ.isFunc(arguments[i][j])) args[j] = arguments[i][j]
                 }
             }
         }
 
         return args
+    }
+
+    Milk.getLauncher = function () {
+        var a
+        if (window.parent && window.parent.FLQ && window.parent.FLQ._ && window.parent.FLQ._['lbox']) {
+            a = window.parent.FLQ.lbox.getArgs()
+            if (FLQ.isObj(a) && FLQ.isSet(typeof a['launcher']) && window.parent.Milk) {
+                return window.parent.Milk.get(a['launcher'])
+            }
+        } else {
+            a = FLQ.popup.getArgs(), o = FLQ.popup.getLauncher()
+            if (FLQ.isObj(a) && FLQ.isSet(typeof a['launcher']) && o !== null && FLQ.isSet(typeof o.Milk)) {
+                return o.Milk.get(a['launcher'])
+            }
+        }
+
+        return null
     }
 
     Milk.editHistory = function (k, v) {
@@ -92,7 +109,7 @@
             this.destId == Milk.SLOT_SAMEWIN ||
             this.destId == Milk.SLOT_NEWWIN ||
             this.destId == Milk.SLOT_CHILDWIN ||
-            this.destId == Milk.SLOT_MODALWIN ||
+            this.destId == Milk.SLOT_LIGHTWIN ||
             this.destId == Milk.SLOT_AJAX
         ) {
             this.dest = this.destId
@@ -142,7 +159,7 @@
             this.dest == Milk.SLOT_SAMEWIN ||
             this.dest == Milk.SLOT_NEWWIN ||
             this.dest == Milk.SLOT_CHILDWIN ||
-            this.dest == Milk.SLOT_MODALWIN ||
+            this.dest == Milk.SLOT_LIGHTWIN ||
             this.dest == Milk.SLOT_AJAX
         ) {
             var frm = document.createElement('form')
@@ -243,7 +260,7 @@
                 delete args.width
                 delete args.height
                 delete args.target
-            } else if (this.dest == Milk.SLOT_MODALWIN) {
+            } else if (this.dest == Milk.SLOT_LIGHTWIN) {
                 if (FLQ.isSet(typeof args.target)) {
                     var t = args.target
                 } else {
@@ -255,9 +272,9 @@
                     'name'      : t,
                     'args'      : {'launcher' : (this.src ? this.src.id : null)}
                 }
-                var w = FLQ.modal('/milk/blank.php', props)
+                var w = FLQ.lbox('/milk/blank.php', props)
                 if (!FLQ.isSet(typeof args.height) && w) {
-                    FLQ.event.add(w, 'load', function () { setTimeout(HOL.modal.autoHeight, 300) })
+                    FLQ.event.add(w, 'load', function () { setTimeout(FLQ.lbox.autoHeight, 300) })
                 }
                 frm.setAttribute('target', t)
 
@@ -273,10 +290,8 @@
             }
 
             // Add remaining arguments
-            if (!FLQ.isSet(typeof args.noact)) {
+            if (!FLQ.isSet(typeof args.nohistory)) {
                 add_field(frm, 'act', this.slot)
-            } else {
-                delete args.noact
             }
             delete args.nohistory
             add_field(frm, args)
@@ -433,6 +448,10 @@
         }
     }
 
+    MilkCtrl.prototype.refresh = function () {
+        new Milk.Conn(null, null, Milk.SLOT_SAMEWIN, 'refresh').exec({'send':true,'validate':false})
+    }
+
     MilkCtrl.prototype.fillHeight = function (n) {
         var h = FLQ.getAvailHeight(n.parentNode)
         if (h > n.offsetHeight) FLQ.setNodeHeight(n, h)
@@ -507,10 +526,39 @@
      * Terminator control
      */
     Milk.Ctrl.Terminator = function (id) {
-        this.id = id
+        this.id      = id
+        this.reload  = true
+        this.url     = null
+        this.doclose = true
     }
 
     Milk.Ctrl.Terminator.prototype = new MilkCtrl()
+
+    Milk.Ctrl.Terminator.prototype.init = function () {
+        if (this.reload) {
+            if (FLQ.isStr(this.url) && this.url.length > 0) {
+                if (window.parent && window.parent.FLQ && window.parent.FLQ._ && window.parent.FLQ._['lbox']) {
+                    window.parent.location = this.url
+                } else if (window.opener) {
+                    window.opener.location = this.url
+                }
+            } else {
+                var l = Milk.getLauncher()
+                if (l !== null && l.hasSlot('refresh')) l.refresh()
+            }
+        }
+        if (this.doclose) this.close()
+    }
+
+    Milk.Ctrl.Terminator.prototype.close = function () {
+        if (window.parent && window.parent.FLQ && window.parent.FLQ._ && window.parent.FLQ._['lbox']) {
+            window.parent.FLQ.lbox.close()
+        } else if (window.opener) {
+            window.close()
+        } else {
+            window.location = '/'
+        }
+    }
 
     /**
      * VerticalBox control
@@ -527,6 +575,52 @@
 
         var c = this
         if (this.fitHeight) setTimeout(function () { c.fillHeight(c.n); c.fillHeight(c.n.lastChild) }, 100)
+    }
+
+    Milk.Ctrl.VertBox = Milk.Ctrl.VerticalBox
+    Milk.Ctrl.VBox = Milk.Ctrl.VerticalBox
+    Milk.Ctrl.VertContainer = Milk.Ctrl.VerticalBox
+    Milk.Ctrl.VertCont = Milk.Ctrl.VerticalBox
+    Milk.Ctrl.VCont = Milk.Ctrl.VerticalBox
+
+    /**
+     * HideBox control
+     */
+    Milk.Ctrl.HideBox = function (id) {
+        this.id = id
+        this.n  = null
+        this.currentShow = false
+        this.defaultSend = false
+    }
+
+    Milk.Ctrl.HideBox.prototype = new MilkCtrl()
+
+    Milk.Ctrl.HideBox.prototype.init = function () {
+        this.n = $(this.id)
+    }
+
+    Milk.Ctrl.HideBox.prototype.show = function () {
+        FLQ.removeClass(this.n, 'hidebox-hide')
+        FLQ.addClass(this.n, 'hidebox-show')
+        this.currentShow = true
+        Milk.editHistory([this.id, 'show'], 1)
+        this.sendSignal('show')
+    }
+
+    Milk.Ctrl.HideBox.prototype.hide = function () {
+        FLQ.removeClass(this.n, 'hidebox-show')
+        FLQ.addClass(this.n, 'hidebox-hide')
+        this.currentShow = false
+        Milk.editHistory([this.id, 'show'], 0)
+        this.sendSignal('hide')
+    }
+
+    Milk.Ctrl.HideBox.prototype.toggle = function () {
+        if (this.currentShow) {
+            this.hide()
+        } else {
+            this.show()
+        }
     }
 
     /**
@@ -550,23 +644,68 @@
      * Tabs control
      */
     Milk.Ctrl.Tabs = function (id) {
-        this.id = id
+        this.id  = id
+        this.n   = null
+        this.tab = null
     }
 
     Milk.Ctrl.Tabs.prototype = new MilkCtrl()
+
+    Milk.Ctrl.Tabs.prototype.init = function () {
+        this.n = $(this.id)
+
+        if (this.n.firstChild && this.n.firstChild.childNodes) {
+            var i, c = this, l = this.n.firstChild.childNodes
+            for (i=0; l[i]; i++) {
+                if (l[i] && FLQ.hasClass(l[i], 'tablabel')) {
+                    FLQ.event.add(l[i], 'click', Function('', 'Milk.get(\''+this.id+'\').showTab('+i+')'))
+//                     l[i].setAttribute('tabidx', i);
+//                     FLQ.event.add(l[i], 'click', function (e) { var el = FLQ.event.getTarget(e); c.showTab(el.getAttribute('tabidx')); });
+                }
+            }
+        }
+
+        this.showTab(this.tab)
+        this.resize()
+    }
+
+    Milk.Ctrl.Tabs.prototype.showTab = function (i) {
+        var p = this.id+'-'+i+'-', s = this.id+'-'+this.tab+'-'
+        if (i != this.tab && !FLQ.hasClass($(p+'label'), 'tablabel-disabled')) {
+            FLQ.removeClass($(s+'label'), 'tablabel-selected')
+            FLQ.removeClass($(s+'tab'), 'tab-selected')
+            FLQ.addClass($(p+'label'), 'tablabel-selected')
+            FLQ.addClass($(p+'tab'), 'tab-selected')
+            Milk.editHistory([this.id, 'tab'], i)
+            this.tab = i
+        }
+    }
+
+    Milk.Ctrl.Tabs.prototype.resize = function () {
+        if (this.n.childNodes && this.n.childNodes[1] && this.n.childNodes[1].childNodes) {
+            var i, mh = 0, t = this.n.childNodes[1].childNodes
+            for (i=0; t[i]; i++) {
+                FLQ.removeClass(t[i], 'tab-off')
+                if (t[i].offsetHeight > mh) mh = t[i].offsetHeight
+                FLQ.addClass(t[i], 'tab-off')
+            }
+            if (mh > 0) this.n.childNodes[1].style.height = mh+'px'
+        }
+    }
 
     /**
      * ListView control
      */
     Milk.Ctrl.DataGrid = function (id) {
         this.id              = id
-        this.defaultRequired = true
+        this.defaultRequire  = true
         this.n               = null
         this.b               = null
         this.f               = []
         this.perpage         = null
         this.offset          = null
         this.totalrows       = null
+        this.connected       = false
     }
 
     Milk.Ctrl.DataGrid.prototype = new MilkCtrl()
@@ -575,13 +714,17 @@
         this.n = $(this.id)
         this.b = this.n.tBodies[0]
 
-        var c = this
-        var tr = this.n.getElementsByTagName('TR')
-        for (var i=1; tr[i]; i++) {
-            FLQ.event.add(tr[i], 'mouseover', function () { FLQ.addClass(this, 'datagrid-hover'); c.sendSignal('hover') })
-            FLQ.event.add(tr[i], 'mouseout', function () { FLQ.removeClass(this, 'datagrid-hover') })
-            FLQ.event.add(tr[i], 'click', function (e) { c.focus(this.rowIndex, e) })
-            FLQ.event.add(tr[i], 'dblclick', function (e) { c.select(this.rowIndex, e) })
+        var i, c = this, tr = this.n.getElementsByTagName('TR'), th = this.n.getElementsByTagName('TH')
+        if (this.connected) {
+            for (i=1; tr[i]; i++) {
+                FLQ.event.add(tr[i], 'mouseover', function () { FLQ.addClass(this, 'datagrid-hover'); c.sendSignal('hover') })
+                FLQ.event.add(tr[i], 'mouseout', function () { FLQ.removeClass(this, 'datagrid-hover') })
+                FLQ.event.add(tr[i], 'click', function (e) { c.focus(this.rowIndex, e) })
+                FLQ.event.add(tr[i], 'dblclick', function (e) { c.select(this.rowIndex, e) })
+            }
+        }
+        for (i=0; th[i]; i++) {
+            FLQ.event.add(th[i], 'click', Function('', 'Milk.get(\''+this.id+'\').sort('+i+')'))
         }
     }
 
@@ -637,6 +780,7 @@
 
     Milk.Ctrl.DataGrid.prototype.select = function (r, e) {
         if (this.f.search(r) == -1) this.focus(r, e)
+        this.sendSignal('select')
         
     }
 
@@ -667,6 +811,18 @@
         this.offset = os
     }
 
+    Milk.Ctrl.DataGrid.prototype.sort = function (c) {
+        var d = (c == this.sortCol && !this.sortDesc ? 1 : 0)
+        Milk.editHistory([this.id, 'sortCol'], c)
+        Milk.editHistory([this.id, 'sortDesc'], d)
+        new Milk.Conn(this, 'sort', Milk.SLOT_SAMEWIN, 'refresh').exec({'send':true})
+    }
+
+    Milk.Ctrl.DataGrid.prototype.csv = function () {
+        Milk.editHistory([this.id, 'csv'], 1)
+        new Milk.Conn(this, 'sort', Milk.SLOT_SAMEWIN, 'refresh').exec({'send':true})
+    }
+
     /**
      * Button control
      */
@@ -681,6 +837,17 @@
         this.n = $(this.id)
         var c = this
         FLQ.event.add(this.n, 'click', function (e) { c.sendSignal('click'); FLQ.event.stopEvent(e) })
+    }
+
+    Milk.Ctrl.Button.prototype.disable = function (args) {
+        var d = (FLQ.isSet(typeof args['disable']) ? args['disable'] : true);
+        if (d) {
+            this.disabled = true;
+            FLQ.addClass(this.n, 'button-disabled');
+        } else {
+            this.disabled = false;
+            FLQ.removeClass(this.n, 'button-disabled');
+        }
     }
 
     /**
@@ -814,6 +981,9 @@
 
     Milk.Ctrl.BoolBox.prototype.init = function () {
         this.n = $(this.id).firstChild
+
+        var c = this
+        FLQ.event.add(this.n, 'change', function () { c.sendSignal('change', {'value':c.getValue()}) })
     }
 
     Milk.Ctrl.BoolBox.prototype.getValue = function () {
@@ -835,9 +1005,29 @@
      */
     Milk.Ctrl.ChooseBox = function (id) {
         this.id = id
+        this.n = null
     }
 
     Milk.Ctrl.ChooseBox.prototype = new Milk.Ctrl.Form()
+
+    Milk.Ctrl.ChooseBox.prototype.init = function () {
+        this.n = $(this.id).firstChild
+
+        var c = this
+        if (this.n.nextSibling) FLQ.event.add(this.n.nextSibling, 'click', function () { c.sendSignal('choose', {'send':false}) })
+    }
+
+    Milk.Ctrl.ChooseBox.prototype.setvalue = function (args) {
+        var v
+        if (v = Milk.getArg(args, 'value')) {
+            this.reqValue = v
+            this.n.value = v[1]
+        }
+    }
+
+    Milk.Ctrl.ChooseBox.prototype.getValue = function () {
+        return this.reqValue
+    }
 
     /**
      * DateBox control

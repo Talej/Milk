@@ -64,13 +64,11 @@
                     if (
                         @$c->args['send'] == FALSE &&
                         @$c->args['nohistory'] == TRUE &&
-                        @$c->args['noact'] == TRUE &&
-                        isset($c->args['modurl']) &&
                         is_scalar($c->dest)
                     ) {
-                        $url = new FLQURL($c->args['modurl']);
+                        $url = new FLQURL(isset($c->args['modurl']) ? $c->args['modurl'] : $_SERVER['PHP_SELF']);
                         foreach ($c->args as $key => $val) {
-                            if (in_array($key, array('send', 'nohistory', 'noact', 'modurl'))) continue;
+                            if (in_array($key, array('send', 'nohistory', 'modurl'))) continue;
                             $url->addArgument($key, $val);
                         }
                         $tag = 'a href="' . $this->entitise($url->toString()) . '" target="' . $c->dest . '"';
@@ -88,9 +86,17 @@
 
             $style = '';
             if ($ctrl->nowrap) $style.= 'white-space:nowrap;';
+            if ($ctrl->color != '') $style.= 'color:#' . $ctrl->color . ';';
             if ($style != '') $style = ' style="' . $style . '"';
 
-            $str = '<' . $tag . ' id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '"' . $style . '>' . $this->entitise($ctrl->value) . '</' . $tag . '>';
+            $tooltip = '';
+            if ($ctrl->tooltip != '') {
+                $tag = 'a';
+                $class.= ' text-tooltip';
+                $tooltip = '<span class="tooltip">' . $this->entitise($ctrl->tooltip) . '</span>';
+            }
+
+            $str = '<' . $tag . ' id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '"' . $style . '>' . $this->entitise($ctrl->value) . $tooltip . '</' . $tag . '>';
 
             $this->put('xhtml', $str);
         }
@@ -105,13 +111,11 @@
                     if (
                         @$c->args['send'] == FALSE &&
                         @$c->args['nohistory'] == TRUE &&
-                        @$c->args['noact'] == TRUE &&
-                        isset($c->args['modurl']) &&
                         is_scalar($c->dest)
                     ) {
-                        $url = new FLQURL($c->args['modurl']);
+                        $url = new FLQURL(isset($c->args['modurl']) ? $c->args['modurl'] : $_SERVER['PHP_SELF']);
                         foreach ($c->args as $key => $val) {
-                            if (in_array($key, array('send', 'nohistory', 'noact', 'modurl'))) continue;
+                            if (in_array($key, array('send', 'nohistory', 'modurl'))) continue;
                             $url->addArgument($key, $val);
                         }
                         $tag = 'a href="' . $this->entitise($url->toString()) . '" target="' . $c->dest . '"';
@@ -127,8 +131,11 @@
                 $tag = 'div';
             }
             if ($ctrl->wrap) $class.= ' label-wrap';
+            $style = '';
+            if ($ctrl->color != '') $style.= 'color:#' . $ctrl->color . ';';
+            if ($style != '') $style = ' style="' . $style . '"';
 
-            $str = '<' . $tag . ' id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '">' . $this->entitise($ctrl->value) . '</' . $tag . '>';
+            $str = '<' . $tag . ' id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '"' . $style . '>' . $this->entitise($ctrl->value) . '</' . $tag . '>';
 
             $this->put('xhtml', $str);
         }
@@ -143,13 +150,11 @@
                     if (
                         @$c->args['send'] == FALSE &&
                         @$c->args['nohistory'] == TRUE &&
-                        @$c->args['noact'] == TRUE &&
-                        isset($c->args['modurl']) &&
                         is_scalar($c->dest)
                     ) {
-                        $url = new FLQURL($c->args['modurl']);
+                        $url = new FLQURL(isset($c->args['modurl']) ? $c->args['modurl'] : $_SERVER['PHP_SELF']);
                         foreach ($c->args as $key => $val) {
-                            if (in_array($key, array('send', 'nohistory', 'noact', 'modurl'))) continue;
+                            if (in_array($key, array('send', 'nohistory', 'modurl'))) continue;
                             $url->addArgument($key, $val);
                         }
                         $atag = '<a href="' . $this->entitise($url->toString()) . '" target="' . $c->dest . '">';
@@ -180,21 +185,44 @@
         public function Image($ctrl) {
             $class = 'image';
             if ($ctrl->hasAnyConnected()) {
-                $this->jsControl($ctrl);
                 $class.= ' image-link';
+                $jsconn = TRUE;
+                if (($conns = $ctrl->getConnections('click')) && count($conns) == 1) {
+                    $c = $conns[0];
+                    if (
+                        @$c->args['send'] == FALSE &&
+                        @$c->args['nohistory'] == TRUE &&
+                        is_scalar($c->dest)
+                    ) {
+                        $url = new FLQURL(isset($c->args['modurl']) ? $c->args['modurl'] : $_SERVER['PHP_SELF']);
+                        foreach ($c->args as $key => $val) {
+                            if (in_array($key, array('send', 'nohistory', 'modurl'))) continue;
+                            $url->addArgument($key, $val);
+                        }
+                        $tag = 'a href="' . $this->entitise($url->toString()) . '" target="' . $c->dest . '"';
+                        $jsconn = FALSE;
+                    }
+                }
+
+                if ($jsconn) {
+                    $this->jsControl($ctrl);
+                    $tag = 'div';
+                }
+            } else {
+                $tag = 'div';
             }
             if ($ctrl->noborder) $class.= ' image-noborder';
 
             $sprite = (is_numeric($ctrl->x) && is_numeric($ctrl->y) ? TRUE : FALSE);
 
-            $str = '<div id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '">'
+            $str = '<' . $tag . ' id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '">'
                  . '<img src="' . $this->entitise($sprite ? '/milk/base/theme/standard/img/1px.png' : $ctrl->src) . '" '
                  . ($ctrl->width > 0 ? ' width="' . $ctrl->width . '" ' : '')
                  . ($ctrl->height > 0 ? ' height="' . $ctrl->height . '" ' : '')
                  . ($ctrl->alt ? ' alt="' . $this->entitise($ctrl->alt) . '" title="' . $this->entitise($ctrl->alt) . '" ' : '')
                  . ($sprite ? ' style="background:url(' . $this->entitise($ctrl->src) . ') ' . $ctrl->x . 'px ' . $ctrl->y . 'px no-repeat" ' : '')
-                 . '/>'
-                 . '</div>';
+                 . ' border="0" />'
+                 . '</' . $tag . '>';
 
             $this->put('xhtml', $str);
         }
@@ -212,9 +240,9 @@
 
         public function Terminator($ctrl) {
             $jsprops = array(
-                'reload' => MilkTools::jsEncode($ctrl->reload, JSTYPE_BOOL),
-                'url'    => MilkTools::jsEncode($ctrl->url, JSTYPE_STRING),
-                'close'  => MilkTools::jsEncode($ctrl->close, JSTYPE_BOOL)
+                'reload'  => MilkTools::jsEncode($ctrl->reload, JSTYPE_BOOL),
+                'url'     => MilkTools::jsEncode($ctrl->url, JSTYPE_STRING),
+                'doclose' => MilkTools::jsEncode($ctrl->close, JSTYPE_BOOL)
             );
 
             $this->jsControl($ctrl, $jsprops);
@@ -242,10 +270,16 @@
             $this->put('xhtml', $str);
         }
 
+        public function VertBox($ctrl) { $this->VerticalBox($ctrl); }
+        public function VBox($ctrl) { $this->VerticalBox($ctrl); }
+        public function VertContainer($ctrl) { $this->VerticalBox($ctrl); }
+        public function VertCont($ctrl) { $this->VerticalBox($ctrl); }
+        public function VCont($ctrl) { $this->VerticalBox($ctrl); }
+    
         public function HorizontalBox($ctrl) {
             $fr = $this->flexratio($ctrl);
 
-            $str = '<div class="horizontalbox"><table class="hbox-table"><tr>';
+            $str = '<div class="horizontalbox"><table class="hbox-table" cellpadding="0" cellspacing="0"><tr>';
             for ($i=0; $i < count($ctrl->controls); $i++) {
                 $this->deliver($ctrl->controls[$i]);
 
@@ -256,6 +290,26 @@
                 $str.= '<td' . $style . '>' . $this->get('xhtml') . '</td>';
             }
             $str.= '</tr></table></div>';
+
+            $this->put('xhtml', $str);
+        }
+
+        public function HorizBox($ctrl) { $this->HorizontalBox($ctrl); }
+        public function HBox($ctrl) { $this->HorizontalBox($ctrl); }
+        public function HorizContainer($ctrl) { $this->HorizontalBox($ctrl); }
+        public function HorizCont($ctrl) { $this->HorizontalBox($ctrl); }
+        public function HCont($ctrl) { $this->HorizontalBox($ctrl); }
+
+        public function HideBox($ctrl) { 
+            $jsprops = array(
+                'currentShow' => MilkTools::jsEncode($ctrl->show, JSTYPE_BOOL)
+            );
+
+            $this->jsControl($ctrl, $jsprops);
+
+            $this->deliverChildren($ctrl);
+
+            $str = '<div id="' . $this->entitise($this->getID($ctrl)) . '" class="hidebox-' . ($ctrl->show ? 'show' : 'hide') . '">' . $this->get('xhtml') . '</div>';
 
             $this->put('xhtml', $str);
         }
@@ -289,7 +343,7 @@
             }
             if ($totalflex > 0) $fr = (100-$noflex)/$totalflex;
 
-            $str = '<div class="table"><table>';
+            $str = '<div class="table"><table cellspacing="0" cellpadding="0">';
             for ($i=0; $i < count($ctrl->controls); $i++) {
                 if (!empty($ctrl->controls[$i])) {
                     $str.= '<tr>';
@@ -326,6 +380,7 @@
             for ($i=0; $i < count($ctrl->tabs); $i++) {
                 $class = 'tablabel';
                 if ($i == $ctrl->tab) $class.= ' tablabel-selected';
+                if (isset($ctrl->disabled[$i])) $class.= ' tablabel-disabled';
                 $str.= '<div class="' . $class . '" id="' . $this->entitise($this->getID($ctrl)) . '-' . $i . '-label">' . $this->entitise($ctrl->tabs[$i]) . '</div>';
             }
 
@@ -346,15 +401,20 @@
 
         public function DataGrid($ctrl) {
             $jsprops = array(
+                'connected' => MilkTools::jsEncode($ctrl->hasAnyConnected(), JSTYPE_BOOL),
                 'perpage'   => MilkTools::jsEncode($ctrl->perpage, JSTYPE_INT),
                 'totalrows' => MilkTools::jsEncode($ctrl->totalrows, JSTYPE_INT),
                 'offset'    => MilkTools::jsEncode($ctrl->offset, JSTYPE_INT),
+                'sortCol'   => MilkTools::jsEncode($ctrl->sortCol, JSTYPE_INT),
+                'sortDesc'  => MilkTools::jsEncode($ctrl->sortDesc, JSTYPE_BOOL)
             );
             $this->jsControl($ctrl, $jsprops);
 
             $str = '<div class="datagrid"><table class="datagrid-table" id="' . $this->entitise($this->getID($ctrl)) . '"><tr class="dg-row">';
             for ($i=0; $i < $ctrl->numcols; $i++) {
-                $str.= '<th>' . $this->entitise(MilkTools::ifNull($ctrl->getProp($i, 'header'), 'Col' . ($i+1))) . '</th>';
+                $class = '';
+                if ($ctrl->sortCol == $i) $class = ' class="sort' . ($ctrl->sortDesc ? 'desc' : '') . '"';
+                $str.= '<th' . $class . '>' . $this->entitise(MilkTools::ifNull($ctrl->getProp($i, 'header'), 'Col' . ($i+1))) . '</th>';
             }
             $str.= '</tr>';
             $c = count($ctrl->data);
@@ -369,7 +429,7 @@
                 $str.= '</tr>';
             }
             if ($c == 0) {
-                $str.= '<tfoot><tr><td class-"dg-cell" colspan="' . $ctrl->numcols . '"><em>There\'s currently no data to display.</em></td></tr></tfoot>';
+                $str.= '<tfoot><tr><td class="dg-cell" colspan="' . $ctrl->numcols . '"><em>There\'s currently no data to display.</em></td></tr></tfoot>';
             }
 
             $str.= '</table></div>';
@@ -487,8 +547,12 @@
 
             $this->jsControl($ctrl, $jsprops);
 
+            $props = array();
+            if ($ctrl->disabled) $props['disabled'] = 1;
+            if ($ctrl->readonly) $props['readonly'] = 1;
+
             $str = '<div id="' . $this->entitise($this->getID($ctrl)) . '" class="boolbox">'
-                 . FLQForm::checkbox($this->getID($ctrl, ''), NULL, $ctrl->reqValue)
+                 . FLQForm::checkbox($this->getID($ctrl, ''), $props, $ctrl->reqValue)
                  . '</div>';
 
             $this->put('xhtml', $str);
@@ -502,8 +566,15 @@
 
             $this->jsControl($ctrl, $jsprops);
 
-            $str = '<div id="' . $this->entitise($this->getID($ctrl)) . '" class="choosebox">'
-                 . FLQForm::textbox($this->getID($ctrl, ''), NULL, $ctrl->reqValue)
+            $class = 'choosebox';
+            if ($ctrl->getAttrib(DD_ATTR_REQUIRED)) $class.= ' choosebox-required';
+
+            $props = array();
+            if ($ctrl->disabled) $props['disabled'] = 1;
+            if ($ctrl->readonly) $props['readonly'] = 1;
+
+            $str = '<div id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '">'
+                 . FLQForm::textbox($this->getID($ctrl, ''), $props, @$ctrl->reqValue[1])
                  . '<div class="choosebox-button"></div>'
                  . '</div>';
 
@@ -512,15 +583,22 @@
 
         public function DateBox($ctrl) {
             $jsprops = array(
-                'value'    => MilkTools::jsEncode($ctrl->value),
-                'reqValue' => MilkTools::jsEncode($ctrl->reqValue),
-                'fmt'      => MilkTools::jsEncode(MilkTools::ifDef('CFG_DATETIME_FORMAT', '%d/%m/%Y'))
+                'value'    => MilkTools::jsEncode($this->entitise($ctrl->value)),
+                'reqValue' => MilkTools::jsEncode($this->entitise($ctrl->reqValue)),
+                'fmt'      => MilkTools::jsEncode(MilkTools::ifDef('CFG_DATE_FORMAT', '%d/%m/%Y'))
             );
 
             $this->jsControl($ctrl, $jsprops);
 
-            $str = '<div id="' . $this->entitise($this->getID($ctrl)) . '" class="datebox">'
-                 . FLQForm::textbox($this->getID($ctrl, ''), NULL, $ctrl->reqValue)
+            $class = 'datebox';
+            if ($ctrl->getAttrib(DD_ATTR_REQUIRED)) $class.= ' datebox-required';
+
+            $props = array();
+            if ($ctrl->disabled) $props['disabled'] = 1;
+            if ($ctrl->readonly) $props['readonly'] = 1;
+
+            $str = '<div id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '">'
+                 . FLQForm::textbox($this->getID($ctrl, ''), $props, $this->entitise($ctrl->reqValue))
                  . '<div class="datebox-button"></div>'
                  . '</div>';
 
@@ -536,8 +614,15 @@
 
             $this->jsControl($ctrl, $jsprops);
 
-            $str = '<div id="' . $this->entitise($this->getID($ctrl)) . '" class="datetimebox">'
-                 . FLQForm::textbox($this->getID($ctrl, ''), NULL, $this->entitise($ctrl->reqValue))
+            $class = 'datetimebox';
+            if ($ctrl->getAttrib(DD_ATTR_REQUIRED)) $class.= ' datetimebox-required';
+
+            $props = array();
+            if ($ctrl->disabled) $props['disabled'] = 1;
+            if ($ctrl->readonly) $props['readonly'] = 1;
+
+            $str = '<div id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '">'
+                 . FLQForm::textbox($this->getID($ctrl, ''), $props, $this->entitise($ctrl->reqValue))
                  . '<div class="datetimebox-button"></div>'
                  . '</div>';
 
@@ -547,11 +632,18 @@
         public function FileBox($ctrl) {
             $this->jsControl($ctrl);
 
-            $str = '<div id="' . $this->entitise($this->getID($ctrl)) . '" class="filebox">';
+            $class = 'filebox';
+            if ($ctrl->getAttrib(DD_ATTR_REQUIRED)) $class.= ' filebox-required';
+
+            $props = array();
+            if ($ctrl->disabled) $props['disabled'] = 1;
+            if ($ctrl->readonly) $props['readonly'] = 1;
+
+            $str = '<div id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '">';
             if ($ctrl->value) {
                 $str.= var_export($ctrl->value, TRUE);
             } else {
-                $str.= FLQForm::file($this->getID($ctrl, ''), NULL, $ctrl->reqValue);
+                $str.= FLQForm::file($this->getID($ctrl, ''), $props, $ctrl->reqValue);
             }
             $str.= '</div>';
 
@@ -559,14 +651,14 @@
         }
 
         public function XML($ctrl) {
-            if (!$ctrl->hasParent('XML')) {
+            if (!$ctrl->hasParent('XML_MilkControl')) {
                 header('Content-type: text/xml; charset=utf-8');
                 print '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' . "\n";
             }
 
             // TODO: attribs
             print '<' . $ctrl->entitise($ctrl->tag);
-            if (count($ctrl->children) > 0) {
+            if (count($ctrl->controls) > 0) {
                 print '>';
                 $this->deliverChildren($ctrl);
                 print '</' . $ctrl->entitise($ctrl->tag) . '>';

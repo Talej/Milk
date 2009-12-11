@@ -8,7 +8,7 @@
     define('MILK_SLOT_SAMEWIN',      '_self');
     define('MILK_SLOT_NEWWIN',      '_blank');
     define('MILK_SLOT_CHILDWIN',    '_child');
-    define('MILK_SLOT_MODALWIN',    '_modal');
+    define('MILK_SLOT_LIGHTWIN',    '_light');
     define('MILK_SLOT_AJAX',         '_ajax');
     define('MILK_SLOT_LAUNCHER', '_launcher');
 

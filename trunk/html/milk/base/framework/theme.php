@@ -99,8 +99,12 @@
             }
         }
 
-        public function includejs($js) {
-            $this->put('includejs', $js);
+        public function includejs($js, $compress=TRUE) {
+            if ($compress && strtolower(substr($js, 0, 4)) != 'http') {
+                $this->put('cachejs', $js);
+            } else {
+                $this->put('includejs', $js);
+            }
         }
 
         public function includecss($css) {
@@ -110,27 +114,26 @@
         public function includes() {
             $str = '';
 
-            $jsfiles = array_unique($this->get('includejs', NULL));
+            $jsfiles = array();
+            $cachefiles = array_unique($this->get('cachejs', NULL));
             $cachedjs = FALSE;
-            if ((!defined('CFG_DEBUG_ENABLED') || !CFG_DEBUG_ENABLED) && !empty($jsfiles)) {
+            if ((!defined('CFG_DEBUG_ENABLED') || !CFG_DEBUG_ENABLED) && !empty($cachefiles)) {
                 include_once(MilkTools::mkPath(MILK_BASE_DIR, 'util', 'compress.php'));
 
-                $cachefiles = array();
-                foreach ($jsfiles as $key => $jsfile) {
-                    if (strtolower(substr($jsfile, 0, 4)) != 'http') {
-                        $cachefiles[] = $jsfile;
-                        unset($jsfiles[$key]);
-                    }
-                }
                 $compress = new FLQCompress(FLQCOMPRESS_TYPE_JS, $cachefiles);
                 if ($jscache = $compress->exec()) {
                     $str.= "<script type=\"text/javascript\" language=\"Javascript1.1\" src=\"" . $this->entitise($jscache) . "\"></script>\n";
                     $cachedjs = TRUE;
                 }
+            } else {
+                $jsfiles = $cachefiles;
             }
-//             if (!$cachedjs) {
+
+
+            $jsfiles = array_unique(array_merge($jsfiles, $this->get('includejs', NULL)));
             if (!empty($jsfiles)) {
                 foreach ($jsfiles as $jsfile) {
+                    if (is_array($jsfile)) list($jsfile,) = $jsfile;
                     $str.= "<script type=\"text/javascript\" language=\"Javascript1.1\" src=\"" . $this->entitise($jsfile) . "\"></script>\n";
                 }
             }

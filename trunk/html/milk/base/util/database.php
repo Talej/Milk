@@ -42,6 +42,8 @@
         protected $stmtcache    = array();
         protected $_useprepared = TRUE;
         protected $escapechar   = "`";
+        protected $inTransaction    = FALSE;
+        protected $transactionStack = 0;
 
         /**
          * constructor method for Database class
@@ -216,6 +218,40 @@
             }
 
             return FALSE;
+        }
+
+        public function beginTransaction() {
+            if (!$this->inTransaction) {
+                $this->inTransaction = TRUE;
+                return parent::beginTransaction();
+            } else {
+                $this->transactionStack++;
+            }
+
+            return TRUE;
+            // TODO: Handle break points
+        }
+
+        public function commit() {
+            if ($this->transactionStack == 0 && $this->inTransaction) {
+                return parent::commit();
+                $this->inTransaction = FALSE;
+            } else {
+                $this->transactionStack--;
+            }
+
+            return TRUE;
+        }
+
+        public function rollBack() {
+            if ($this->transactionStack == 0 &&$this->inTransaction) {
+                return parent::rollBack();
+                $this->inTransaction = FALSE;
+            } else {
+                $this->transactionStack--;
+            }
+
+            return TRUE;
         }
 
         /**

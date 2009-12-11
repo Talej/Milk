@@ -1,6 +1,8 @@
 
     if (typeof FLQ == 'undefined') var FLQ = new Object()
 
+    if (typeof FLQ._ == 'undefined') FLQ._ = new Object()
+
     FLQ.isSet = function (v) {
         return (v != 'undefined' ? true : false)
     }
@@ -191,7 +193,242 @@
             s+= (s != '' ? ',' : '') + i+'='+props[i]
         }
 // TODO: Need to add support for "launcher" property
-        window.open(url, n, s);
+        window.open(url, n, s)
+    }
+
+    FLQ.lbox = function () {
+        return FLQ.lbox.open.apply(FLQ.popup, arguments)
+    }
+
+    FLQ.lbox.minWidth = 200
+    FLQ.lbox.minHeight = 100
+
+    FLQ.lbox.open = function (href) {
+        if (FLQ.isObj(FLQ._['lbox'])) FLQ.lbox.close()
+
+        var a = arguments
+        var o = (a.length > 1 && FLQ.isObj(a[a.length-1]) ? a[a.length-1] : {})
+        if (!FLQ.isSet(typeof o['width']) && a.length > 2) o['width'] = a[1]
+        if (!FLQ.isSet(typeof o['height']) && a.length > 3) o['height'] = a[2]
+        var d = {'width':600,'height':400,'toolbars':'no','scrollbars':'yes','resizable':true}
+        for (var i in d) { if (!FLQ.isSet(typeof o[i])) o[i] = d[i] }
+        if (FLQ.isSet(typeof o['name'])) {
+            var n = o['name']
+            delete o['name']
+        } else {
+            var n = href.replace(/[^a-zA-Z0-9_]/g, '')
+        }
+
+        var d = document.createElement('div')
+        FLQ.addClass(d, 'lboxwindow')
+
+        d.appendChild(b = document.createElement('div'))
+        FLQ.addClass(b, 'background')
+
+        d.appendChild(i = document.createElement('div'))
+        FLQ.addClass(i, 'lboxwindow-inner')
+        i.style.width = o['width']+'px'
+        i.style.height = o['height']+'px'
+        FLQ.lbox.setCenterPos(i)
+
+        i.innerHTML = '<iframe frameborder="0" name="'+n+'" src="'+href+'"></iframe>'
+
+        // Re-center the lbox when the window is resized
+        FLQ.event.add(window, 'resize', function () { FLQ.lbox.setCenterPos(i) })
+
+        // Close button
+        i.appendChild(c = document.createElement('div'))
+        FLQ.addClass(c, 'close')
+        FLQ.event.add(c, 'click', FLQ.lbox.close)
+
+        // Add Esc shortcut to close lbox - char below is the keyboard escape key (keyCode 27)
+        FLQ.shortcut.add('Esc', FLQ.lbox.close)
+
+        // Resize button
+        if (o['resizable']) {
+            i.appendChild(r = document.createElement('div'))
+            FLQ.addClass(r, 'resize')
+            FLQ.event.add(r, 'mousedown', FLQ.lbox.startResize)
+        }
+
+        if (FLQ.isSet(typeof o['args'])) {
+            if (!FLQ.isObj(FLQ._['lboxargs'])) FLQ._['lboxargs'] = {}
+            FLQ._['lboxargs'] = o['args']
+            delete o['args']
+        }
+
+        // Move event
+        i.appendChild(m = document.createElement('div'))
+        FLQ.addClass(m, 'move')
+        FLQ.event.add(m, 'mousedown', FLQ.lbox.startMove)
+
+        document.body.appendChild(d)
+        FLQ._['lbox'] = d
+
+        return i.firstChild
+    }
+
+    FLQ.lbox.close = function (reload) {
+        if (!FLQ.isBool(reload)) reload = false
+        if (FLQ.isObj(FLQ._['lbox'])) {
+            if (reload) window.location.reload()
+            FLQ._['lbox'].parentNode.removeChild(FLQ._['lbox'])
+            FLQ._['lbox'] = null
+            FLQ._['lboxargs'] = null
+        }
+        FLQ.shortcut.remove('Esc')
+    }
+
+    FLQ.lbox.setCenterPos = function (n) {
+        var wWidth = (FLQ.isSet(typeof window.innerWidth) ? window.innerWidth : document.documentElement.clientWidth)
+        var wHeight = (FLQ.isSet(typeof window.innerHeight) ? window.innerHeight : document.documentElement.clientHeight)
+        n.style.left = Math.max((wWidth-parseInt(n.style.width))/2, 0)+'px'
+        n.style.top = Math.max(((wHeight-parseInt(n.style.height))/2)-20, 0)+'px'
+    }
+
+    FLQ.lbox.getLauncher = function () {
+        return window.top
+    }
+
+    FLQ.lbox.getArgs = function () {
+        if (window.parent) {
+            var o = window.parent
+            if (
+                FLQ.isSet(typeof o.FLQ) &&
+                FLQ.isSet(typeof o.FLQ._) &&
+                FLQ.isSet(typeof o.FLQ._['lboxargs'])
+            ) {
+                return o.FLQ._['lboxargs']
+            }
+        }
+
+        return null
+    }
+
+    FLQ.lbox.autoHeight = function () {
+        if (FLQ._['lbox']) {
+            var i = FLQ._['lbox'].childNodes[1]
+            var d = i.getElementsByTagName('iframe')[0].contentWindow.document
+            // TODO: Work out where the 4px is coming from
+            if (d.body) {
+                if (d.height) {
+                    i.style.height = Math.min(Math.max(d.height, d.body.offsetHeight, d.body.clientHeight)+6, window.top.innerHeight-60)+'px'
+                } else {
+                    i.style.height = Math.min(Math.max(d.body.scrollHeight, d.body.offsetHeight, d.body.clientHeight)+6, window.top.document.documentElement.clientHeight-60)+'px'
+                }
+            }
+            FLQ.lbox.setCenterPos(i)
+        }
+    }
+
+    FLQ.lbox.startResize = function (e) {
+        if (FLQ._['lbox']) {
+            if (FLQ.lbox.moving) FLQ.lbox.endMove()
+            var iframe = FLQ._['lbox'].getElementsByTagName('iframe')[0]
+            FLQ.event.add(document.body, 'mouseup', FLQ.lbox.endResize)
+            FLQ.event.add(document.body, 'mousemove', FLQ.lbox.resize)
+            FLQ.event.add(iframe.contentWindow.document.body, 'mouseup', FLQ.lbox.endResize)
+            FLQ.event.add(iframe.contentWindow.document.body, 'mousemove', FLQ.lbox.resize)
+            FLQ.lbox.X = e.screenX
+            FLQ.lbox.Y = e.screenY
+            FLQ.lbox.resizing = true
+            FLQ.event.stopPropagation(e)
+        }
+    }
+
+    FLQ.lbox.endResize = function () {
+        var iframe = FLQ._['lbox'].getElementsByTagName('iframe')[0]
+        FLQ.event.removeListener(document.body, 'mousemove', FLQ.lbox.resize)
+        FLQ.event.removeListener(document.body, 'mouseup', FLQ.lbox.endResize)
+        FLQ.event.removeListener(iframe.contentWindow.document.body, 'mouseup', FLQ.lbox.endResize)
+        FLQ.event.removeListener(iframe.contentWindow.document.body, 'mousemove', FLQ.lbox.resize)
+        FLQ.lbox.resizing = false
+    }
+
+    FLQ.lbox.resize = function (e) {
+        if (FLQ._['lbox']) {
+            var m = FLQ._['lbox'].getElementsByTagName('iframe')[0].parentNode
+            var end = false
+
+            if (m) {
+                var w = e.screenX-FLQ.lbox.X
+                var h = e.screenY-FLQ.lbox.Y
+                if (w > 3 || w < 3) {
+                    var mw = parseInt(m.style.width)
+                    var neww = (mw != NaN ? mw : m.offsetWidth)+w
+                    if (neww >= FLQ.lbox.minWidth) {
+                        m.style.width = neww+'px'
+                        FLQ.lbox.X = e.screenX
+                    } else {
+                        end = true
+                    }
+                }
+                if (h > 3 || h < 3) {
+                    var mh = parseInt(m.style.height)
+                    var newh = (mh != NaN ? mh : m.offsteHeight)+h
+                    if (newh >= FLQ.lbox.minHeight) {
+                        m.style.height = newh+'px'
+                        FLQ.lbox.Y = e.screenY
+                    } else {
+                        end = true
+                    }
+                }
+            }
+
+            if (end) FLQ.lbox.endResize()
+        }
+    }
+
+    FLQ.lbox.startMove = function (e) {
+        if (FLQ._['lbox']) {
+            if (FLQ.lbox.resizing) FLQ.lbox.endResize()
+            var iframe = FLQ._['lbox'].getElementsByTagName('iframe')[0]
+            FLQ.event.add(document.body, 'mouseup', FLQ.lbox.endMove)
+            FLQ.event.add(document.body, 'mousemove', FLQ.lbox.move)
+            FLQ.event.add(iframe.contentWindow.document.body, 'mouseup', FLQ.lbox.endMove)
+            FLQ.event.add(iframe.contentWindow.document.body, 'mousemove', FLQ.lbox.move)
+            FLQ.lbox.X = e.screenX
+            FLQ.lbox.Y = e.screenY
+            FLQ.lbox.moving = true
+
+            var m = iframe.parentNode
+            if (m) {
+                FLQ.addClass(m, 'moving')
+            }
+        }
+    }
+
+    FLQ.lbox.endMove = function () {
+        var iframe = FLQ._['lbox'].getElementsByTagName('iframe')[0]
+        FLQ.event.removeListener(document.body, 'mousemove', FLQ.lbox.move)
+        FLQ.event.removeListener(document.body, 'mouseup', FLQ.lbox.endMove)
+        FLQ.event.removeListener(iframe.contentWindow.document.body, 'mouseup', FLQ.lbox.endMove)
+        FLQ.event.removeListener(iframe.contentWindow.document.body, 'mousemove', FLQ.lbox.move)
+        FLQ.lbox.moving = false
+
+        var m = FLQ._['lbox'].getElementsByTagName('iframe')[0].parentNode
+        if (m) {
+            FLQ.removeClass(m, 'moving')
+        }
+    }
+
+    FLQ.lbox.move = function (e) {
+        if (FLQ._['lbox']) {
+            var m = FLQ._['lbox'].getElementsByTagName('iframe')[0].parentNode
+
+            if (m) {
+                var l = e.screenX-FLQ.lbox.X
+                var t = e.screenY-FLQ.lbox.Y
+                if (l > 3 || l < 3) {
+                    m.style.left = (parseInt(m.style.left)+l)+'px'
+                    FLQ.lbox.X = e.screenX
+                }
+                if (t > 3 || t < 3) {
+                    m.style.top = (parseInt(m.style.top)+t)+'px'
+                    FLQ.lbox.Y = e.screenY
+                }
+            }
+        }
     }
 
     Number.prototype.pad = function (n, p) {
@@ -328,4 +565,185 @@
         }
 
         return false
-}
+    }
+
+    FLQ.shortcut = {}
+    FLQ.shortcut.enabled = false
+    FLQ.shortcut.events = {}
+
+    FLQ.shortcut.add = function (s, f) {
+        if (!FLQ.shortcut.enabled) FLQ.shortcut.enable()
+        s = FLQ.shortcut.parse(s)
+        if (!FLQ.isFunc(FLQ.shortcut.events[s])) {
+            FLQ.shortcut.events[s] = f
+        } else {
+            throw('A function is already registered to the shortcut '+s)
+        }
+    }
+
+    FLQ.shortcut.remove = function (s) {
+        s = FLQ.shortcut.parse(s)
+        if (FLQ.shortcut.events[s]) delete FLQ.shortcut.events[s]
+    }
+
+    /**
+     * parse is used to normalise the format of the shortcut signature
+     * passed to add so Ctrl+Shift+A would be the same as Ctrl+A+Shift
+     * for example
+     */
+    FLQ.shortcut.parse = function (s) {
+        s = s.toLowerCase()
+        var p = s.split('+')
+        var ctrl = false, alt = false, shift = false, esc = false, char = ''
+        if (p && p.length > 0) {
+            for (var i=0; i < p.length; i++) {
+                switch (p[i]) {
+                    case 'ctrl': ctrl = true; break
+                    case 'alt': alt = true; break
+                    case 'shift': shift = true; break
+                    case 'esc':
+                    default:
+                        char+= (char.length > 0 ? '+' : '') + p[i]
+                        break
+                }
+            }
+
+            var ns = ''
+            if (ctrl) ns+= 'ctrl'
+            if (alt) ns+= (ns.length > 0 ? '+' : '') + 'alt'
+            if (shift) ns+= (ns.length > 0 ? '+' : '') + 'shift'
+            if (esc) ns+= (ns.length > 0 ? '+' : '') + 'esc'
+            ns+= (ns.length > 0 ? '+' : '') + char
+
+            return ns
+        }
+
+        return s
+    }
+
+    FLQ.shortcut.handle = function (e) {
+        var t = FLQ.event.getTarget(e)
+        if (t.nodeName != 'INPUT' || t.nodeName != 'SELECT') {
+            var s = '';
+            if (e.ctrlKey)  s+= 'ctrl';
+            if (e.altKey)   s+= (s.length > 0 ? '+' : '') + 'alt'
+            if (e.shiftKey) s+= (s.length > 0 ? '+' : '') + 'shift'
+            if (e.keyCode == 27) {
+                s+= (s.length > 0 ? '+' : '') + 'esc'
+            } else {
+                var c = FLQ.event.getCharCode(e)
+                if (c > 0) s+= (s.length > 0 ? '+' : '') + String.fromCharCode(c).toLowerCase()
+            }
+
+            if (FLQ.isFunc(FLQ.shortcut.events[s])) {
+                FLQ.shortcut.events[s](e)
+                FLQ.event.stopEvent(e)
+            }
+        }
+    }
+
+    FLQ.shortcut.catchKeys = function (e) {
+        var t = FLQ.event.getTarget(e)
+        if (t.nodeName != 'INPUT' || t.nodeName != 'SELECT') {
+            var s = ''
+            if (e.ctrlKey)  s+= 'ctrl'
+            if (e.altKey)   s+= (s.length > 0 ? '+' : '') + 'alt'
+            if (e.shiftKey) s+= (s.length > 0 ? '+' : '') + 'shift'
+            if (e.keyCode == 27) {
+                s+= (s.length > 0 ? '+' : '') + 'esc'
+            } else {
+                var c = FLQ.event.getCharCode(e)
+                if (c > 0) s+= (s.length > 0 ? '+' : '') + String.fromCharCode(c).toLowerCase()
+            }
+
+            if (FLQ.isFunc(FLQ.shortcut.events[s])) {
+                FLQ.event.stopEvent(e)
+            }
+        }
+    }
+
+    FLQ.shortcut.enable = function () {
+        FLQ.event.add(document, 'keydown', FLQ.shortcut.handle)
+        // This was added to fix problem with Ctrl+A in Opera
+        FLQ.event.add(document, 'keypress', FLQ.shortcut.catchKeys)
+        FLQ.shortcut.enabled = true
+    }
+
+    FLQ.ajax = function (url, callback) {
+        this.url          = url
+        this.handlers     = {}
+        this.headers      = {}
+        this.method       = 'GET'
+        this.asynchronous = true
+        this.svr          = null
+
+        if (arguments.length > 1) this.addHandler(callback)
+    }
+
+    FLQ.ajax.prototype.addHandler = function (func, status, state) {
+        if (arguments.length < 2) status = 200
+        if (arguments.length < 3) state = 4 // 4 = ready state complete
+
+        if (FLQ.isFunc(func)) {
+            if (!FLQ.isObj(this.handlers[state])) this.handlers[state] = {}
+            this.handlers[state][status] = func
+        }
+    }
+
+    FLQ.ajax.prototype.addHeader = function (key, val) {
+        this.headers[key] = val
+    }
+
+    FLQ.ajax.prototype.send = function (data) {
+        if (arguments.length < 1) data = ''
+
+        if (this.url == null) throw('FLQ.ajax.send() - url must be specified')
+
+        var svr = false
+        if (FLQ.isSet(typeof ActiveXObject)) {
+            try {
+                svr = new ActiveXObject("Msxml2.XMLHTTP")
+            } catch (e) {
+                try {
+                    svr = new ActiveXObject("Microsoft.XMLHTTP")
+                } catch (e) {
+                    svr = false
+                }
+            }
+        } else if (window.XMLHttpRequest) {
+            try {
+                svr = new XMLHttpRequest()
+            } catch (e) {
+                svr = false
+            }
+        }
+
+        if (svr) {
+            var a = this
+            svr.onreadystatechange = function () {
+                try {
+                    var state = svr.readyState
+                } catch (e) {
+                    return false
+                }
+                try {
+                    var status = svr.status
+                } catch (e) {
+                    return false
+                }
+                a.state = state
+                if (FLQ.isSet(typeof a.handlers[state]) && FLQ.isFunc(a.handlers[state][status])) {
+                    a.handlers[state][status](svr)
+                } else if (FLQ.isSet(typeof a.handlers[state]) && FLQ.isFunc(a.handlers[state][''])) {
+                    a.handlers[state][''](svr)
+                }
+            }
+
+            svr.open(this.method, this.url, this.asynchronous)
+            for (var i in this.headers) {
+                svr.setRequestHeader(i, this.headers[i])
+            }
+
+            svr.send(data)
+        }
+    }

@@ -4,6 +4,8 @@
         public $signals = array('click');
         public $value;
         public $nowrap = FALSE;
+        public $color;
+        public $tooltip;
 
         public function __construct($parent, $value) {
             parent::__construct($parent);
@@ -98,6 +100,12 @@
     class HorizCont_MilkControl extends HorizontalBox_MilkControl { }
     class HCont_MilkControl extends HorizontalBox_MilkControl { }
 
+    class HideBox_MilkControl extends MilkControl {
+        public $slots = array('show', 'hide', 'toggle');
+        public $signals = array('show', 'hide');
+        public $show = FALSE;
+    }
+
     class Template_MilkControl extends MilkControl {
         public $signals = array('load');
         public $title;
@@ -151,34 +159,53 @@
     }
 
     class Tabs_MilkControl extends MilkControl {
-        public $signals = array('showtab');
-        public $tabs = array();
-        public $tab = 0;
+        public $signals  = array('showtab');
+        public $tabs     = array();
+        public $tab      = 0;
+        public $disabled = array();
 
-        public function add($parent, $label, $ctrl) {
+        public function __construct($parent) {
+            parent::__construct($parent);
+
+            if (isset($this->request['tab'])) {
+                $this->tab = $this->request['tab'];
+            }
+        }
+
+        public function add($label, $ctrl) {
             $this->tabs[] = $label;
             $args = func_get_args();
-            array_unshift($args);
-            $cb = array(parent, 'add');
+            array_shift($args);
+            $cb = array('parent', 'add');
             return call_user_func_array($cb, $args);
+        }
+
+        public function disable($tab) {
+            if (isset($this->tabs[$tab])) {
+                $this->disabled[$tab] = TRUE;
+            }
         }
     }
 
     class DataGrid_MilkControl extends MilkControl {
         public $signals     = array('hover', 'focus', 'select');
-        public $slots       = array('first', 'prev', 'next', 'last');
+        public $slots       = array('first', 'prev', 'next', 'last', 'csv');
         public $strictConns = FALSE;
         public $data        = array();
         public $numcols     = 0;
         public $perpage     = NULL;
         public $totalrows   = NULL;
         public $offset      = 0;
+        public $sortCol     = 0;
+        public $sortDesc    = FALSE;
         protected $props    = array();
         protected $cols     = array();
 
         public function __construct($parent) {
             parent::__construct($parent);
             if (isset($this->request['offset'])) $this->offset = $this->request['offset'];
+            if (isset($this->request['sortCol'])) $this->sortCol = $this->request['sortCol'];
+            if (isset($this->request['sortDesc'])) $this->sortDesc = $this->request['sortDesc'];
         }
 
         public function setProp($col, $key, $val) {
@@ -195,7 +222,11 @@
         }
 
         public function setHeaders($header) {
-            $args = func_get_args();
+            if (is_array($header)) {
+                $args = $header;
+            } else {
+                $args = func_get_args();
+            }
             $c = count($args);
             for ($i=0; $i < $c; $i++) {
                 if (is_string($args[$i])) {
@@ -208,7 +239,11 @@
         }
 
         public function setCols($col) {
-            $args = func_get_args();
+            if (is_array($col)) {
+                $args = $col;
+            } else {
+                $args = func_get_args();
+            }
             foreach ($args as $col) {
                 if (!is_string($col)) {
                     trigger_error('DataGrid::setCols() - ' . $col . ' is not a valid column name', E_USER_ERROR);
@@ -216,6 +251,15 @@
             }
             $this->cols = $args;
             $this->numcols = max($this->numcols, count($this->cols));
+        }
+
+        public function sort($col, $desc=FALSE) {
+            if (is_integer($col) && isset($this->cols[$col])) {
+                $this->sortCol = $col;
+            } else if (is_scalar($col) && ($i = array_search($col, $this->cols)) !== FALSE) {
+                $this->sortCol = $i;
+            }
+            $this->sortDesc = ($desc ? TRUE : FALSE);
         }
 
         public function add($row, $actargs=NULL) {
@@ -235,19 +279,61 @@
             }
         }
 
+        public function &normaliseRow($db, $sql, &$row) {
+            $keys = array_keys(get_object_vars($row));
+            foreach ($keys as $idx => $key) {
+                if (in_array($key, $this->cols) && ($meta = $db->getColumnMeta($sql->toString(), $idx)) && isset($meta['native_type'])) {
+                    switch ($meta['native_type']) {
+                        case 'DATE':
+                            if ($row->{$meta['name']} !== NULL && !is_object($row->{$meta['name']})) {
+                                $tmp = $row->{$meta['name']};
+                                $row->{$meta['name']} = new MilkDate();
+                                $row->{$meta['name']}->fromDBString($tmp);
+                            }
+                            break;
+
+                        case 'TIMESTAMP':
+                        case 'DATETIME':
+                            if ($row->{$meta['name']} !== NULL && !is_object($row->{$meta['name']})) {
+                                $tmp = $row->{$meta['name']};
+                                $row->{$meta['name']} = new MilkDateTime();
+                                $row->{$meta['name']}->fromDBString($tmp);
+                            }
+                            break;
+
+                        case 'TIME':
+                            if ($row->{$meta['name']} !== NULL && !is_object($row->{$meta['name']})) {
+                                $tmp = $row->{$meta['name']};
+                                $row->{$meta['name']} = new MilkTime();
+                                $row->{$meta['name']}->fromDBString($tmp);
+                            }
+                            break;
+                    }
+                }
+            }
+
+            return $row;
+        }
+
         public function getNext($db, $sql) {
             if ($this->perpage > 0) {
-                if ($this->totalrows == NULL) {
+                if ($this->totalrows == NULL && !isset($this->request['csv'])) {
                     $sql->option('SQL_CALC_FOUND_ROWS');
                     $sql->limit($this->perpage, $this->offset);
                 }
             }
-            $row = $db->getnext($sql->toString());
-            if ($this->perpage > 0 && $this->totalrows == NULL) {
-                $this->totalrows = $db->foundrows();
+            if ($this->totalrows == NULL && isset($this->cols[$this->sortCol])) {
+                $sql->orderby($this->cols[$this->sortCol], ($this->sortDesc ? 'DESC' : 'ASC'));
+            }
+            if ($row = $db->getnext($sql->toString())) {
+                if ($this->totalrows == NULL) {
+                    $this->totalrows = $db->foundrows();
+                }
+
+                return $this->normaliseRow($db, $sql, $row);
             }
 
-            return $row;
+            return NULL;
         }
 
         public function addNav($h) {
@@ -281,12 +367,36 @@
             }
         }
 
+        public function csv() {
+            $csv = $this->module->newControl('CSV');
+            $headers = array();
+            for ($i=0; $i < $this->numcols; $i++) {
+                if ($header = $this->getProp($i, 'header')) {
+                    $headers[] = $header;
+                }
+            }
+            if (!empty($headers)) $csv->addHeaders($headers);
+            foreach ($this->data as $row) {
+                list($data,) = $row;
+                $csv->add($data);
+            }
+            $csv->toFile();
+        }
+
+        public function deliver($theme) {
+            if (isset($this->request['csv'])) {
+                $this->csv();
+            } else {
+                parent::deliver($theme);
+            }
+        }
         // TODO: Add deliver to check if nav is added when perpage is set
     }
 
     /* Form controls */
     class Button_MilkControl extends MilkControl {
         public $signals = array('click');
+        public $slots = array('disable');
         public $value;
         public $src;
         public $disabled = FALSE;
@@ -376,7 +486,7 @@
         public $minsel;
         public $maxsel;
 
-        public function __construct($parent, $name, $value, $attrs=NULL) {
+        public function __construct($parent, $name, $value=NULL, $attrs=NULL) {
             parent::__construct($parent, $name, $value, $attrs);
             $this->options = $this->getAttrib('options');
             $this->minsel = $this->getAttrib('min');
@@ -445,7 +555,7 @@
         public $delimeter = ',';
         public $headers = array();
 
-        function addHeaders($headers) {
+        public function addHeaders($headers) {
             if (is_array($headers) || is_object($headers)) {
                 foreach ($headers as $val) {
                     $this->headers[] = $val;
@@ -453,13 +563,13 @@
             }
         }
 
-        function addRow($row) {
+        public function add($row) {
             if (is_array($row) || is_object($row)) {
                 $this->data[] = $row;
             }
         }
 
-        function addAll($data) {
+        public function addAll($data) {
             if (is_array($data)) {
                 $this->data = $data;
                 return TRUE;
@@ -475,11 +585,12 @@
          * @param array &$data the data to CSV encode
          * @param string $delim optional param, the column delimiter. Deaults to comma (,)
          */
-        function encode(&$data, $delim=NULL) {
+        public function encode(&$data, $delim=NULL) {
             if (!$delim) $delim = $this->delimeter;
 
             $rowbuffer = '';
             foreach ($data as $field) {
+                if (is_object($field) && method_exists($field, 'toString')) $field = $field->toString();
                 if (is_object($field) || is_array($field)) $field = '';
                 if ($rowbuffer != '') $rowbuffer .= $delim;
                 if ($field == '' || strchr($field, $delim) || strchr($field, '"')) {
@@ -494,7 +605,7 @@
             // return mb_convert_encoding($rowbuffer . "\r\n", 'UTF-16LE');
         }
 
-        function toFile($file=NULL) {
+        public function toFile($file=NULL) {
             header('Pragma: ');
             header('Content-type: text/csv; charset=utf-8');
             header('Content-Disposition: attachment; filename="' . ($file ? str_replace('"', '\"', $filename) : 'data.csv') . '"');
@@ -503,7 +614,7 @@
             exit;
         }
 
-        function toString() {
+        public function toString() {
             $csv = '';
             if (!empty($this->headers)) {
                 $csv.= $this->encode($this->headers, $this->delimeter);

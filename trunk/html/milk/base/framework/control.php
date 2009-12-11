@@ -117,7 +117,7 @@
                 $target != MILK_SLOT_SAMEWIN &&
                 $target != MILK_SLOT_NEWWIN &&
                 $target != MILK_SLOT_CHILDWIN &&
-                $target != MILK_SLOT_MODALWIN &&
+                $target != MILK_SLOT_LIGHTWIN &&
                 $target != MILK_SLOT_LAUNCHER &&
                 $target != MILK_SLOT_AJAX
             ) {

@@ -8,6 +8,8 @@
         public $actions       = array();
         public $dataDefs      = array();
         public $errors        = array();
+        public $warnings      = array();
+        public $messages      = array();
         public $history       = array();
         public $URI;
         public $request;
@@ -39,13 +41,11 @@
             $cbd = array($this, 'deliver');
             $this->addHookHandler('deliver', $cbd);
 
-            if (is_array($this->request) && isset($this->request['history'])) {
-                if (is_array($this->request['history'])) $this->history = array_values($this->request['history']);
-                unset($this->request['history']);
-            }
-            if (is_array($this->request) && isset($this->request['errors'])) {
-                if (is_array($this->request['errors'])) $this->errors = array_values($this->request['errors']);
-                unset($this->request['errors']);
+            foreach (array('history', 'errors', 'warnings', 'messages') as $key) {
+                if (is_array($this->request) && isset($this->request[$key])) {
+                    if (is_array($this->request[$key])) $this->{$key} = array_values($this->request[$key]);
+                    unset($this->request[$key]);
+                }
             }
 
             $this->setProp('ua', new FLQUserAgent());
@@ -127,7 +127,10 @@
             $args = func_get_args();
             $cb = array('MilkControl', 'create');
             array_unshift($args, $this);
-            return call_user_func_array($cb, $args);
+            $c = call_user_func_array($cb, $args);
+            if ($this->rootControl == NULL) $this->addControl($c);
+
+            return $c;
         }
 
         public function addControl($ctrl) {
@@ -235,6 +238,8 @@
                 $module->db            = $this->db;
                 $module->history       =& $this->history;
                 $module->errors        =& $this->errors;
+                $module->warnings      =& $this->warnings;
+                $module->messages      =& $this->messages;
                 $module->URI           = clone $this->URI;
                 $module->defaultAction = $this->defaultAction;
 
@@ -245,7 +250,7 @@
                 $module->request = $module->URI->arguments;
                 $module->run();
             } else {
-                $this->addControl($this->newControl('Terminator'));
+                $this->newControl('Terminator');
                 $this->deliver();
                 exit;
             }

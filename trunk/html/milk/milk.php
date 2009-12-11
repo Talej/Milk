@@ -202,7 +202,7 @@
 
         protected function loadModule() {
             if ($this->load(MILK_APP_DIR, 'module', strtolower($this->moduleName) . '.php')) {
-                $classname = $this->moduleName . '_MilkModule';
+                $classname = str_replace('.', '', $this->moduleName) . '_MilkModule';
                 if (class_exists($classname) && is_subclass_of($classname, 'MilkModule')) {
                     $this->module = new $classname();
                     return TRUE;

@@ -82,7 +82,7 @@
                             break;
 
                         case DD_TYPE_EMAIL:
-                            $attribs[DD_ATTR_REGEX] = '^([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6})?$';
+                            $attribs[DD_ATTR_REGEX] = '^([A-z0-9._%+-]+@[A-z0-9.-]+\.[A-z]{2,6})?$';
                             $attribs[DD_ATTR_TYPE]  = 'text';
                             $attribs[DD_ATTR_MAX]   = 255;
                             break;
@@ -143,6 +143,14 @@
                     }
                 } else {
                     foreach ($arg as $k => $v) {
+                        switch ($k) {
+                            case DD_ATTR_OPTIONS:
+                                if ($v instanceof SQLFactory && isset($this->module->db)) {
+                                    $v = $this->module->db->gethash($v->toString());
+                                }
+                                break;
+                        }
+
                         $attribs[$k] = $v;
                     }
                 }

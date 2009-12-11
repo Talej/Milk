@@ -163,7 +163,7 @@
         }
 
         public function password($val, $key, $props, $encrypt=true) {
-            $val = ($encrypt ? crypt($val) : $val);
+            $val = ($encrypt && $val != '' ? crypt($val) : $val);
             return self::text($val, $key, $props);
         }
 
