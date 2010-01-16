@@ -76,6 +76,12 @@
         public $close  = TRUE;
     }
 
+    class Box_MilkControl extends MilkControl {
+        public $flex = 1;
+        public $cssclass;
+        public $width;
+    }
+
     class VerticalBox_MilkControl extends MilkControl {
         public $flex = 1;
         public $fitHeight = FALSE;

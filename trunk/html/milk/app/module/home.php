@@ -6,7 +6,5 @@
             $t = $this->newControl('Template');
 
             $t->add('Text', 'This is a text control in the home module in Milk');
-
-            $this->addControl($t);
         }
     }

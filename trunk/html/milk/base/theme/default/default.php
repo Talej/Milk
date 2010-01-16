@@ -59,6 +59,7 @@
             if ($ctrl->hasAnyConnected()) {
                 $class.= ' text-link';
                 $jsconn = TRUE;
+                $endtag = 'a';
                 if (($conns = $ctrl->getConnections('click')) && count($conns) == 1) {
                     $c = $conns[0];
                     if (
@@ -81,7 +82,7 @@
                     $tag = 'a href="#"';
                 }
             } else {
-                $tag = 'div';
+                $tag = $endtag = 'div';
             }
 
             $style = '';
@@ -96,7 +97,7 @@
                 $tooltip = '<span class="tooltip">' . $this->entitise($ctrl->tooltip) . '</span>';
             }
 
-            $str = '<' . $tag . ' id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '"' . $style . '>' . $this->entitise($ctrl->value) . $tooltip . '</' . $tag . '>';
+            $str = '<' . $tag . ' id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '"' . $style . '>' . $this->entitise($ctrl->value) . $tooltip . '</' . $endtag . '>';
 
             $this->put('xhtml', $str);
         }
@@ -106,6 +107,7 @@
             if ($ctrl->hasAnyConnected()) {
                 $class.= ' label-link';
                 $jsconn = TRUE;
+                $endtag = 'a';
                 if (($conns = $ctrl->getConnections('click')) && count($conns) == 1) {
                     $c = $conns[0];
                     if (
@@ -128,14 +130,14 @@
                     $tag = 'a href="#"';
                 }
             } else {
-                $tag = 'div';
+                $tag = $endtag = 'div';
             }
             if ($ctrl->wrap) $class.= ' label-wrap';
             $style = '';
             if ($ctrl->color != '') $style.= 'color:#' . $ctrl->color . ';';
             if ($style != '') $style = ' style="' . $style . '"';
 
-            $str = '<' . $tag . ' id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '"' . $style . '>' . $this->entitise($ctrl->value) . '</' . $tag . '>';
+            $str = '<' . $tag . ' id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '"' . $style . '>' . $this->entitise($ctrl->value) . '</' . $endtag . '>';
 
             $this->put('xhtml', $str);
         }
@@ -187,6 +189,7 @@
             if ($ctrl->hasAnyConnected()) {
                 $class.= ' image-link';
                 $jsconn = TRUE;
+                $endtag = 'a';
                 if (($conns = $ctrl->getConnections('click')) && count($conns) == 1) {
                     $c = $conns[0];
                     if (
@@ -209,7 +212,7 @@
                     $tag = 'div';
                 }
             } else {
-                $tag = 'div';
+                $tag = $endtag = 'div';
             }
             if ($ctrl->noborder) $class.= ' image-noborder';
 
@@ -222,7 +225,7 @@
                  . ($ctrl->alt ? ' alt="' . $this->entitise($ctrl->alt) . '" title="' . $this->entitise($ctrl->alt) . '" ' : '')
                  . ($sprite ? ' style="background:url(' . $this->entitise($ctrl->src) . ') ' . $ctrl->x . 'px ' . $ctrl->y . 'px no-repeat" ' : '')
                  . ' border="0" />'
-                 . '</' . $tag . '>';
+                 . '</' . $endtag . '>';
 
             $this->put('xhtml', $str);
         }
@@ -248,6 +251,24 @@
             $this->jsControl($ctrl, $jsprops);
 
             print $this->xhtmlDoc();
+        }
+
+        public function Box($ctrl) {
+            $class = 'box';
+            if ($ctrl->cssclass) $class.= ' ' . $this->entitise($ctrl->cssclass);
+
+            $style = '';
+            if ($ctrl->width > 0) {
+                $ctrl->flex = NULL;
+                $style.= 'width:' . $ctrl->width . 'px;';
+            }
+            if ($style != '') $style = ' style="' . $style . '"';
+
+            $this->deliverChildren($ctrl);
+
+            $str = '<div class="' . $class . '"' . $style . '>' . $this->get('xhtml') . '<div style="clear:both"></div></div>';
+
+            $this->put('xhtml', $str);
         }
 
         public function VerticalBox($ctrl) {
@@ -355,7 +376,7 @@
                         $style = '';
                         $width = $this->flexsize($fr, $ctrl->controls[$i][$o]);
                         if ($width > 0) $style.= ' style="width:' . $width . '%;"';
-                        if ($cols == $o && $cols < $ctrl->maxcols) $style.= ' colspan="' . ($ctrl->maxcols-$cols) . '"';
+                        if ($cols == $o && $cols < $ctrl->maxcols-1) $style.= ' colspan="' . ($ctrl->maxcols-$cols) . '"';
 
                         $str.= '<td' . $style . '>' . $this->get('xhtml') . '</td>';
                     }
@@ -438,23 +459,43 @@
         }
 
         public function Button($ctrl) {
-            if ($ctrl->hasConnected('click')) {
-                $this->jsControl($ctrl);
+            $endtag = 'a';
+            if ($ctrl->hasAnyConnected()) {
+                $jsconn = TRUE;
+                if (($conns = $ctrl->getConnections('click')) && count($conns) == 1) {
+                    $c = $conns[0];
+                    if (
+                        @$c->args['send'] == FALSE &&
+                        @$c->args['nohistory'] == TRUE &&
+                        is_scalar($c->dest)
+                    ) {
+                        $url = new FLQURL(isset($c->args['modurl']) ? $c->args['modurl'] : $_SERVER['PHP_SELF']);
+                        foreach ($c->args as $key => $val) {
+                            if (in_array($key, array('send', 'nohistory', 'modurl'))) continue;
+                            $url->addArgument($key, $val);
+                        }
+                        $tag = 'a href="' . $this->entitise($url->toString()) . '" target="' . $c->dest . '"';
+                        $jsconn = FALSE;
+                    }
+                }
+
+                if ($jsconn) {
+                    $this->jsControl($ctrl);
+                    $tag = 'a href="#"';
+                }
             } else {
+                $tag = 'a';
                 $this->disabled = TRUE;
             }
 
             $img = '';
             if ($ctrl->src != '') $img = '<img src="' . (substr($ctrl->src, 0, 1) == '/' ? '' : $this->imgSrc()) . $ctrl->src . '" alt="' . $this->entitise($ctrl->value) . '" />';
 
-            $href = '';
             $class = 'button';
             if ($ctrl->disabled) {
                 $class.= ' button-disabled';
-            } else {
-                 $href = ' href="#"';
             }
-            $str = '<a id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '"' . $href . '>' . $img . $this->entitise($ctrl->value) . '</a>';
+            $str = '<' . $tag . ' id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '">' . $img . $this->entitise($ctrl->value) . '</' . $endtag . '>';
 
             $this->put('xhtml', $str);
         }
