@@ -26,7 +26,7 @@
             $words = preg_split('/([A-Z][^A-Z]+)/', $key, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
             $label = '';
             foreach ($words as $word) {
-                $label.= ($label != '' ? strtolower($word) : $word);
+                $label.= ($label != '' ? ' ' . strtolower($word) : $word);
             }
             return $label;
         }
