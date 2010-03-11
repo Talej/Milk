@@ -74,9 +74,8 @@
     FLQ.event.getFunc = function (ele, event, fRef) {
         if (typeof FLQ.event.f[event] == 'undefined') FLQ.event.f[event] = {}
         if (typeof FLQ.event.f[event][ele] == 'undefined') FLQ.event.f[event][ele] = {}
-        if (typeof FLQ.event.f[event][ele][fRef] == 'undefined') FLQ.event.f[event][ele][fRef] = {}
-        FLQ.event.f[event][ele][fRef] = function (e) { if (!e) e = window.event; fRef.apply(ele, [e]) }
-        return FLQ.event.f[event][ele][fRef];
+        if (typeof FLQ.event.f[event][ele][fRef] == 'undefined') FLQ.event.f[event][ele][fRef] = function (e) { if (!e) e = window.event; fRef.apply(ele, [e]) }
+        return FLQ.event.f[event][ele][fRef]
     }
 
     /**
