@@ -480,12 +480,16 @@
                 }
 
                 if ($jsconn) {
-                    $this->jsControl($ctrl);
+                    $jsprops = array(
+                        'dodisable' => $ctrl->hasSlotConnected('slotdone')
+                    );
+
+                    $this->jsControl($ctrl, $jsprops);
                     $tag = 'a href="#"';
                 }
             } else {
                 $tag = 'a';
-                $this->disabled = TRUE;
+                $ctrl->disabled = TRUE;
             }
 
             $img = '';

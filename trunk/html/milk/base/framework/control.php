@@ -112,6 +112,7 @@
         public function connect($signal, $target, $slot, $args=NULL) {
             if (!$this->hasSignal($signal)) trigger_error('MilkControl::connect() - ' . get_class($this) . ' control does not have a ' . $signal . ' signal', E_USER_ERROR);
             if ($target instanceof MilkControl) {
+                if ($target->hasSignal('slotdone') && $this->hasSlot('slotdone')) $target->connect('slotdone', $this, 'slotdone');
                 if (!$target->hasSlot($slot)) trigger_error('MilkControl::connect() - ' . get_class($target) . ' control does not have a ' . $slot . ' slot', E_USER_ERROR);
             } else if (
                 $target != MILK_SLOT_SAMEWIN &&
@@ -164,6 +165,16 @@
             }
 
             return FALSE;
+        }
+
+        public function hasSlotConnected($slot) {
+            if ($this->hasSlot($slot)) {
+                foreach ($this->slotConnections as $conn) {
+                    if ($conn->slot == $slot) {
+                        return TRUE;
+                    }
+                }
+            }
         }
 
         public function hasAnyConnected() {

@@ -274,7 +274,7 @@
                 }
                 var w = FLQ.lbox('/milk/blank.php', props)
                 if (!FLQ.isSet(typeof args.height) && w) {
-                    FLQ.event.add(w, 'load', function () { setTimeout(FLQ.lbox.autoHeight, 300) })
+                    FLQ.e.add(w, 'load', function () { setTimeout(FLQ.lbox.autoHeight, 300) })
                 }
                 frm.setAttribute('target', t)
 
@@ -470,7 +470,7 @@
     Milk.Ctrl.Text.prototype.init = function () {
         this.n = $(this.id)
         var c = this
-        FLQ.event.add(this.n, 'click', function (e) { c.sendSignal('click'); FLQ.event.stopEvent(e) })
+        FLQ.e.add(this.n, 'click', function (e) { c.sendSignal('click'); FLQ.e.stopEvent(e) })
     }
 
     /**
@@ -486,7 +486,7 @@
     Milk.Ctrl.Label.prototype.init = function () {
         this.n = $(this.id)
         var c = this
-        FLQ.event.add(this.n, 'click', function (e) { c.sendSignal('click'); FLQ.event.stopEvent(e) })
+        FLQ.e.add(this.n, 'click', function (e) { c.sendSignal('click'); FLQ.e.stopEvent(e) })
     }
 
     /**
@@ -502,7 +502,7 @@
     Milk.Ctrl.Heading.prototype.init = function () {
         this.n = $(this.id)
         var c = this
-        FLQ.event.add(this.n, 'click', function (e) { c.sendSignal('click'); FLQ.event.stopEvent(e) })
+        FLQ.e.add(this.n, 'click', function (e) { c.sendSignal('click'); FLQ.e.stopEvent(e) })
     }
 
     /**
@@ -519,7 +519,7 @@
         this.n = $(this.id)
 
         var c = this
-        FLQ.event.add(this.n, 'click', function () { c.sendSignal('click') })
+        FLQ.e.add(this.n, 'click', function () { c.sendSignal('click') })
     }
 
     /**
@@ -658,9 +658,9 @@
             var i, c = this, l = this.n.firstChild.childNodes
             for (i=0; l[i]; i++) {
                 if (l[i] && FLQ.hasClass(l[i], 'tablabel')) {
-                    FLQ.event.add(l[i], 'click', Function('', 'Milk.get(\''+this.id+'\').showTab('+i+')'))
+                    FLQ.e.add(l[i], 'click', Function('', 'Milk.get(\''+this.id+'\').showTab('+i+')'))
 //                     l[i].setAttribute('tabidx', i);
-//                     FLQ.event.add(l[i], 'click', function (e) { var el = FLQ.event.getTarget(e); c.showTab(el.getAttribute('tabidx')); });
+//                     FLQ.e.add(l[i], 'click', function (e) { var el = FLQ.e.getTarget(e); c.showTab(el.getAttribute('tabidx')); });
                 }
             }
         }
@@ -717,14 +717,14 @@
         var i, c = this, tr = this.n.getElementsByTagName('TR'), th = this.n.getElementsByTagName('TH')
         if (this.connected) {
             for (i=1; tr[i]; i++) {
-                FLQ.event.add(tr[i], 'mouseover', function () { FLQ.addClass(this, 'datagrid-hover'); c.sendSignal('hover') })
-                FLQ.event.add(tr[i], 'mouseout', function () { FLQ.removeClass(this, 'datagrid-hover') })
-                FLQ.event.add(tr[i], 'click', function (e) { c.focus(this.rowIndex, e) })
-                FLQ.event.add(tr[i], 'dblclick', function (e) { c.select(this.rowIndex, e) })
+                FLQ.e.add(tr[i], 'mouseover', function () { FLQ.addClass(this, 'datagrid-hover'); c.sendSignal('hover') })
+                FLQ.e.add(tr[i], 'mouseout', function () { FLQ.removeClass(this, 'datagrid-hover') })
+                FLQ.e.add(tr[i], 'click', function (e) { c.focus(this.rowIndex, e) })
+                FLQ.e.add(tr[i], 'dblclick', function (e) { c.select(this.rowIndex, e) })
             }
         }
         for (i=0; th[i]; i++) {
-            FLQ.event.add(th[i], 'click', Function('', 'Milk.get(\''+this.id+'\').sort('+i+')'))
+            FLQ.e.add(th[i], 'click', Function('', 'Milk.get(\''+this.id+'\').sort('+i+')'))
         }
     }
 
@@ -827,8 +827,9 @@
      * Button control
      */
     Milk.Ctrl.Button = function (id) {
-        this.id = id
-        this.n  = null
+        this.id        = id
+        this.n         = null
+        this.dodisable = false
     }
 
     Milk.Ctrl.Button.prototype = new MilkCtrl()
@@ -836,7 +837,7 @@
     Milk.Ctrl.Button.prototype.init = function () {
         this.n = $(this.id)
         var c = this
-        FLQ.event.add(this.n, 'click', function (e) { c.sendSignal('click'); FLQ.event.stopEvent(e) })
+        FLQ.e.add(this.n, 'click', function (e) { if (c.dodisable) c.disable({disable:true}); c.sendSignal('click'); FLQ.e.stopEvent(e) })
     }
 
     Milk.Ctrl.Button.prototype.disable = function (args) {
@@ -848,6 +849,10 @@
             this.disabled = false;
             FLQ.removeClass(this.n, 'button-disabled');
         }
+    }
+
+    Milk.Ctrl.Button.prototype.slotdone = function () {
+        this.disable({disable:false})
     }
 
     /**
@@ -862,6 +867,14 @@
     }
 
     Milk.Ctrl.Form.prototype = new MilkCtrl()
+
+    Milk.Ctrl.Form.prototype.addE = function () {
+        if (this.n) {
+            var c = this
+            FLQ.e.add(this.n, 'focus', function () { FLQ.addClass(c.n.parentNode, 'focussed') })
+            FLQ.e.add(this.n, 'blur', function () { FLQ.removeClass(c.n.parentNode, 'focussed') })
+        }
+    }
 
     Milk.Ctrl.Form.prototype.getValue = function () {
         return this.n.value
@@ -886,6 +899,8 @@
         if (v = Milk.getArg(args, 'value')) {
             this.n.value = v
         }
+
+        this.sendSignal('slotdone');
     }
 
     Milk.Ctrl.Form.prototype.focus = function () {
@@ -906,14 +921,15 @@
         this.n = $(this.id).firstChild
 
         var c = this
-        FLQ.event.add(this.n, 'keypress', function (e) { c.keypress(e) })
+        FLQ.e.add(this.n, 'keypress', function (e) { c.keypress(e) })
+        this.addE()
     }
 
     Milk.Ctrl.TextBox.prototype.keypress = function (e) {
         if (e.keyCode && e.keyCode == 13) {
             if (this.n.nodeName.toLowerCase() != 'textarea') {
                 this.sendSignal('enter')
-                FLQ.event.stopEvent(e)
+                FLQ.e.stopEvent(e)
             }
         }
     }
@@ -931,7 +947,8 @@
         this.n = $(this.id).firstChild
 
         var c = this
-        FLQ.event.add(this.n, 'keypress', function (e) { c.keypress(e) })
+        FLQ.e.add(this.n, 'keypress', function (e) { c.keypress(e) })
+        this.addE()
     }
 
     /**
@@ -947,6 +964,7 @@
 
     Milk.Ctrl.ListBox.prototype.init = function () {
         this.n = $(this.id).firstChild
+        this.addE()
     }
 
     Milk.Ctrl.ListBox.prototype.getValue = function () {
@@ -983,7 +1001,7 @@
         this.n = $(this.id).firstChild
 
         var c = this
-        FLQ.event.add(this.n, 'change', function () { c.sendSignal('change', {'value':c.getValue()}) })
+        FLQ.e.add(this.n, 'change', function () { c.sendSignal('change', {'value':c.getValue()}) })
     }
 
     Milk.Ctrl.BoolBox.prototype.getValue = function () {
@@ -998,6 +1016,7 @@
 
     Milk.Ctrl.BoolBox.prototype.toggle = function () {
         this.setvalue({'value':(this.getValue() ? false : true)})
+        this.sendSignal('slotdone');
     }
 
     /**
@@ -1014,7 +1033,7 @@
         this.n = $(this.id).firstChild
 
         var c = this
-        if (this.n.nextSibling) FLQ.event.add(this.n.nextSibling, 'click', function () { c.sendSignal('choose', {'send':false}) })
+        if (this.n.nextSibling) FLQ.e.add(this.n.nextSibling, 'click', function () { c.sendSignal('choose', {'send':false}) })
     }
 
     Milk.Ctrl.ChooseBox.prototype.setvalue = function (args) {
@@ -1047,10 +1066,11 @@
         this.n = this.p.firstChild
 
         var c = this
-        FLQ.event.add(this.n, 'focus', function () { c.show() })
-        FLQ.event.add(this.n, 'click', function (e) { FLQ.event.stopEvent(e) })
-        FLQ.event.add(this.n, 'change', function () { c.hide() })
-        FLQ.event.add(this.n, 'keypress', function (e) { c.keypress(e) })
+        FLQ.e.add(this.n, 'focus', function () { c.show() })
+        FLQ.e.add(this.n, 'click', function (e) { FLQ.e.stopEvent(e) })
+        FLQ.e.add(this.n, 'change', function () { c.hide() })
+        FLQ.e.add(this.n, 'keypress', function (e) { c.keypress(e) })
+        this.addE()
     }
 
     Milk.Ctrl.DateBox.prototype.keypress = function (e) {
@@ -1085,7 +1105,7 @@
         t.appendChild(b = document.createElement('tbody'))
 
         var c = this
-        FLQ.event.add(document.body, 'click', function () { setTimeout('Milk.get(\''+c.id+'\').hide()', 100) })
+        FLQ.e.add(document.body, 'click', function () { setTimeout('Milk.get(\''+c.id+'\').hide()', 100) })
 
         // calendar nav & month label
         b.appendChild(tr = document.createElement('tr'))
@@ -1093,14 +1113,14 @@
         FLQ.addClass(tr, 'datebox-title');
         td.appendChild(document.createTextNode('«'))
         FLQ.addClass(td, 'datebox-prev');
-        FLQ.event.add(td, 'click', function (e) { c.show((m == 0 ? 11 : m-1), (m == 0 ? y-1 : y)); FLQ.event.stopEvent(e) })
+        FLQ.e.add(td, 'click', function (e) { c.show((m == 0 ? 11 : m-1), (m == 0 ? y-1 : y)); FLQ.e.stopEvent(e) })
         tr.appendChild(td = document.createElement('td'))
         td.appendChild(document.createTextNode(v.mths[m]+' '+y))
         td.colSpan = 5;
         tr.appendChild(td = document.createElement('td'))
         td.appendChild(document.createTextNode('»'))
         FLQ.addClass(td, 'datebox-next');
-        FLQ.event.add(td, 'click', function (e) { c.show((m == 11 ? 0 : m+1), (m == 11 ? y+1 : y));  FLQ.event.stopEvent(e) })
+        FLQ.e.add(td, 'click', function (e) { c.show((m == 11 ? 0 : m+1), (m == 11 ? y+1 : y));  FLQ.e.stopEvent(e) })
 
         b.appendChild(tr = document.createElement('tr'))
         FLQ.addClass(tr, 'datebox-dow')
@@ -1130,7 +1150,7 @@
                 tr.appendChild(td = document.createElement('td'))
                 td.appendChild(document.createTextNode(d));
                 FLQ.addClass(td, cl);
-                FLQ.event.add(td, 'click', new Function('', 'with (ctr = Milk.get(\''+c.id+'\')) { setvalue({\'value\': getCalValue(\''+dt.strftime(c.fmt)+'\')}) }'))
+                FLQ.e.add(td, 'click', new Function('', 'with (ctr = Milk.get(\''+c.id+'\')) { setvalue({\'value\': getCalValue(\''+dt.strftime(c.fmt)+'\')}) }'))
             } else {
                 tr.appendChild(td = document.createElement('td'))
                 FLQ.addClass(td, 'datebox-nonday')
@@ -1148,13 +1168,13 @@
             for (var i=0; i <= 23; i++) {
                 h.options[o++] = new Option((i < 10 ? '0' : '')+i, i, (v.getHours() == i ? true : false))
             }
-            FLQ.event.add(h, 'click', function (e) { FLQ.event.stopEvent(e); })
+            FLQ.e.add(h, 'click', function (e) { FLQ.e.stopEvent(e); })
             t.appendChild(mi = document.createElement('select'))
             o = 0
             for (var i=0; i < 60; i++) {
                 mi.options[o++] = new Option((i < 10 ? '0' : '')+i, i, (v.getMinutes() == i ? true : false))
             }
-            FLQ.event.add(mi, 'click', function (e) { FLQ.event.stopEvent(e); })
+            FLQ.e.add(mi, 'click', function (e) { FLQ.e.stopEvent(e); })
         }
 
         if (a) this.c.style.height = '0px'
@@ -1209,7 +1229,7 @@
             this.c.parentNode.removeChild(this.c)
         }
         var c = this
-        FLQ.event.removeListener(document.body, 'click', function () { setTimeout('Milk.get(\''+c.id+'\').hide()', 100) })
+        FLQ.e.removeListener(document.body, 'click', function () { setTimeout('Milk.get(\''+c.id+'\').hide()', 100) })
     }
 
     /**
@@ -1229,10 +1249,11 @@
         this.n = this.p.firstChild
 
         var c = this
-        FLQ.event.add(this.n, 'focus', function () { c.show() })
-        FLQ.event.add(this.n, 'click', function (e) { FLQ.event.stopEvent(e) })
-        FLQ.event.add(this.n, 'change', function () { c.hide() })
-        FLQ.event.add(this.n, 'keypress', function (e) { c.keypress(e) })
+        FLQ.e.add(this.n, 'focus', function () { c.show() })
+        FLQ.e.add(this.n, 'click', function (e) { FLQ.e.stopEvent(e) })
+        FLQ.e.add(this.n, 'change', function () { c.hide() })
+        FLQ.e.add(this.n, 'keypress', function (e) { c.keypress(e) })
+        this.addE()
     }
 
     /**
@@ -1250,7 +1271,8 @@
         this.n = $(this.id).firstChild
 
         var c = this
-        FLQ.event.add(this.n, 'change', function () { c.changed = true })
+        FLQ.e.add(this.n, 'change', function () { c.changed = true })
+        this.addE()
     }
 
     Milk.Ctrl.FileBox.prototype.hasChanged = function () {
@@ -1263,4 +1285,4 @@
             this.n.style.display = 'none'
             f.appendChild(this.n)
         }
-    }
+    };

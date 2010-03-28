@@ -264,6 +264,7 @@
 
     .button-disabled {
         cursor:default !important;
+        color:#cccccc !important;
     }
 
     /**

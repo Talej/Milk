@@ -402,7 +402,7 @@
     /* Form controls */
     class Button_MilkControl extends MilkControl {
         public $signals = array('click');
-        public $slots = array('disable');
+        public $slots = array('disable', 'slotdone');
         public $value;
         public $src;
         public $disabled = FALSE;
@@ -416,6 +416,7 @@
 
     abstract class Form_MilkControl extends MilkControl {
         public $slots = array('setvalue', 'focus');
+        public $signals = array('slotdone');
         public $value;
         public $reqValue;
         public $disabled = FALSE;
@@ -471,7 +472,7 @@
     }
 
     class TextBox_MilkControl extends Form_MilkControl {
-        public $signals = array('enter');
+        public $signals = array('enter', 'slotdone');
         public $minlen;
         public $maxlen;
 
@@ -483,11 +484,11 @@
     }
 
     class PasswordBox_MilkControl extends Form_MilkControl {
-        public $signals = array('enter');
+        public $signals = array('enter', 'slotdone');
     }
 
     class ListBox_MilkControl extends Form_MilkControl {
-        public $signals = array('change');
+        public $signals = array('change', 'slotdone');
         public $options = array();
         public $minsel;
         public $maxsel;
@@ -505,17 +506,17 @@
     }
 
     class BoolBox_MilkControl extends Form_MilkControl {
-        public $signals = array('change');
+        public $signals = array('change', 'slotdone');
         public $slots = array('setvalue', 'toggle');
     }
 
     class ChooseBox_MilkControl extends Form_MilkControl {
-        public $signals = array('change', 'choose');
+        public $signals = array('change', 'choose', 'slotdone');
         public $slots = array('setvalue', 'clear');
     }
 
     class DateBox_MilkControl extends Form_MilkControl {
-        public $signals = array('enter');
+        public $signals = array('enter', 'slotdone');
     }
 
     class DateTimeBox_MilkControl extends DateBox_MilkControl {

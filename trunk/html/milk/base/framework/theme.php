@@ -186,7 +186,7 @@
         public function jsControl($ctrl, $props=NULL) {
             $str = 'Milk.add(' . MilkTools::jsEncode($ctrl->name) . ', '
                  . MilkTools::jsEncode($this->getID($ctrl, '')) . ', '
-                 . MilkTools::jsEncode((array)$props, JSTYPE_HASH, FALSE) . ').init();';
+                 . MilkTools::jsEncode((array)$props, JSTYPE_HASH) . ').init();';
 
             $this->put('constructjs', $str);
 

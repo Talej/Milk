@@ -1,7 +1,7 @@
 
-    if (typeof FLQ == 'undefined') var FLQ = new Object()
+    if (typeof FLQ == 'undefined') var FLQ = {}
 
-    if (typeof FLQ._ == 'undefined') FLQ._ = new Object()
+    if (typeof FLQ._ == 'undefined') FLQ._ = {}
 
     FLQ.isSet = function (v) {
         return (v != 'undefined' ? true : false)
@@ -746,4 +746,4 @@
 
             svr.send(data)
         }
-    }
+    };

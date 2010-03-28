@@ -23,37 +23,37 @@
      * Version: 1.0.0 BETA
      */
     FLQ.URL = function (url) {
-        this.scheme = null;
-        this.host   = null;
-        this.port   = null;
-        this.path   = null;
-        this.args   = {};
-        this.anchor = null;
+        this.scheme = null
+        this.host   = null
+        this.port   = null
+        this.path   = null
+        this.args   = {}
+        this.anchor = null
 
-        if (arguments.length > 0) this.set(url);
+        if (arguments.length > 0) this.set(url)
     }
 
     /**
      * thisURL() parses the current window.location and returns a FLQ.URL object
      */
     FLQ.URL.thisURL = function () {
-        return new FLQ.URL(window.location.href);
+        return new FLQ.URL(window.location.href)
     }
 
-    FLQ.URL.prototype = new Object();
+    FLQ.URL.prototype = {}
 
     /**
      * set() parses a url and sets the properties of the FLQ.URL object
      */
     FLQ.URL.prototype.set = function (url) {
-        var p;
+        var p
         if (p = this.parseURL(url)) {
-            this.scheme = p['scheme'];
-            this.host   = p['host'];
-            this.port   = p['port'];
-            this.path   = p['path'];
-            this.args   = this.parseArgs(p['args']);
-            this.anchor = p['anchor'];
+            this.scheme = p['scheme']
+            this.host   = p['host']
+            this.port   = p['port']
+            this.path   = p['path']
+            this.args   = this.parseArgs(p['args'])
+            this.anchor = p['anchor']
         }
     }
 
@@ -62,22 +62,22 @@
      */
     FLQ.URL.prototype.removeArg = function (k) {
         if (k && String(k.constructor) == String(Array)) { // TODO: Change to use is_array
-            var t = this.args;
-            for (var i=0; i < k.length-1; i++) {
+            var t = this.args, i
+            for (i=0; i < k.length-1; i++) {
                 if (typeof t[k[i]] != 'undefined') { // TODO: Change to use isset
-                    t = t[k[i]];
+                    t = t[k[i]]
                 } else {
-                    return false;
+                    return false
                 }
             }
-            delete t[k[k.length-1]];
-            return true;
+            delete t[k[k.length-1]]
+            return true
         } else if (typeof this.args[k] != 'undefined') { // TODO: Change to use isset
-            delete this.args[k];
-            return true;
+            delete this.args[k]
+            return true
         }
 
-        return false;
+        return false
     }
 
     /**
@@ -85,18 +85,18 @@
      */
     FLQ.URL.prototype.addArg = function (k, v, o) {
         if (k && String(k.constructor) == String(Array)) { // TODO: Change to use is_array
-            var t = this.args;
-            for (var i=0; i < k.length-1; i++) {
-                if (typeof t[k[i]] == 'undefined') t[k[i]] = {};
-                t = t[k[i]];
+            var t = this.args, i
+            for (i=0; i < k.length-1; i++) {
+                if (typeof t[k[i]] == 'undefined') t[k[i]] = {}
+                t = t[k[i]]
             }
-            if (o || typeof t[k[k.length-1]] == 'undefined') t[k[k.length-1]] = v; // TODO: Change to use isset
+            if (o || typeof t[k[k.length-1]] == 'undefined') t[k[k.length-1]] = v // TODO: Change to use isset
         } else if (o || typeof this.args[k] == 'undefined') { // TODO: Change to use isset
-            this.args[k] = v;
-            return true;
+            this.args[k] = v
+            return true
         }
 
-        return false;
+        return false
     }
 
     /**
@@ -104,57 +104,52 @@
      */
     FLQ.URL.prototype.parseURL = function (url) {
         // TODO: Add support for ftp username
-        var p = {}, m;
+        var p = {}, m
         if (m = url.match(/((s?ftp|https?):\/\/)?([^\/:]+)?(:([0-9]+))?([^\?#]+)?(\?([^#]+))?(#(.+))?/)) {
-            p['scheme'] = (m[2]  ? m[2] : 'http');
-            p['host']   = (m[3]  ? m[3] : window.location.host);
-            p['port']   = (m[5]  ? m[5] : null);
-            p['path']   = (m[6]  ? m[6] : null);
-            p['args']   = (m[8]  ? m[8] : null);
-            p['anchor'] = (m[10] ? m[10] : null);
+            p['scheme'] = (m[2]  ? m[2] : 'http')
+            p['host']   = (m[3]  ? m[3] : window.location.host)
+            p['port']   = (m[5]  ? m[5] : null)
+            p['path']   = (m[6]  ? m[6] : null)
+            p['args']   = (m[8]  ? m[8] : null)
+            p['anchor'] = (m[10] ? m[10] : null)
 
-            return p;
+            return p
         }
 
-        return false;
+        return false
     }
 
     /**
      * parseArgs() parses a query string and returns an object containing the parsed data
      */
     FLQ.URL.parseArgs = function (s) {
-        var a = {};
+        var a = {}, kp, kv, p, i, z, t, o
         if (s && s.length) {
-            var kp, kv;
-            var p;
             if ((kp = s.split('&')) && kp.length) {
-                for (var i=0; i < kp.length; i++) {
-                    
+                for (i=0; i < kp.length; i++) {
                     if ((kv = kp[i].split('=')) && kv.length == 2) {
                         kv[0] = FLQ.URL.decode(kv[0])
                         kv[1] = FLQ.URL.decode(kv[1])
                         if (p = kv[0].split(/(\[|\]\[|\])/)) {
-                            if (p[p.length-1] == '') p.splice(p.length-1, 1);
-                            for (var z=0; z < p.length; z++) {
-                                if (p[z] == ']' || p[z] == '[' || p[z] == '][') {
-                                    p.splice(z, 1);
-                                }
+                            if (p[p.length-1] == '') p.splice(p.length-1, 1)
+                            for (z=0; z < p.length; z++) {
+                                if (p[z] == ']' || p[z] == '[' || p[z] == '][') p.splice(z, 1)
                             }
-                            var t = a;
-                            for (var o=0; o < p.length-1; o++) {
-                                if (typeof t[p[o]] == 'undefined') t[p[o]] = {}; // TODO: Change this to isset
-                                t = t[p[o]];
+                            t = a
+                            for (o=0; o < p.length-1; o++) {
+                                if (typeof t[p[o]] == 'undefined') t[p[o]] = {} // TODO: Change this to isset
+                                t = t[p[o]]
                             }
-                            t[p[p.length-1]] = kv[1];
+                            t[p[p.length-1]] = kv[1]
                         } else {
-                            a[kv[0]] = kv[1];
+                            a[kv[0]] = kv[1]
                         }
                     }
                 }
             }
         }
 
-        return a;
+        return a
     }
 
     FLQ.URL.prototype.parseArgs = function (s) {
@@ -167,63 +162,63 @@
     FLQ.URL.prototype.toArgs = function (a, p) {
         if (arguments.length < 2) p = '';
         if (a && typeof a == 'object') { // TODO: Change this to use is_object
-            var s = '';
+            var s = '', k, i
             for (i in a) {
                 if (typeof a[i] != 'function') {
-                    if (s.length) s+= '&';
+                    if (s.length) s+= '&'
                     if (typeof a[i] == 'object') { // TODO: Change this to use is_object
-                        var k = (p.length ? p+'['+i+']' : i);
-                        s+= this.toArgs(a[i], k);
+                        k = (p.length ? p+'['+i+']' : i)
+                        s+= this.toArgs(a[i], k)
                     } else { // TODO: Change this to use is_function
-                        s+= p+(p.length && i != '' ? '[' : '')+i+(p.length && i != '' ? ']' : '')+'='+a[i];
+                        s+= p+(p.length && i != '' ? '[' : '')+i+(p.length && i != '' ? ']' : '')+'='+a[i]
                     }
                 }
             }
-            return s;
+            return s
         }
 
-        return '';
+        return ''
     }
 
     /**
      * toAbsolute() returns a string containing the absolute URL for the current FLQ.URL object
      */
     FLQ.URL.prototype.toAbsolute = function () {
-        var s = '';
-        if (this.scheme != null) s+= this.scheme+'://';
-        if (this.host != null) s+= this.host;
-        if (this.port != null) s+= ':'+this.port;
-        s+= this.toRelative();
+        var s = ''
+        if (this.scheme != null) s+= this.scheme+'://'
+        if (this.host != null) s+= this.host
+        if (this.port != null) s+= ':'+this.port
+        s+= this.toRelative()
 
-        return s;
+        return s
     }
 
     /**
      * toRelative() returns a string containing the relative URL for the current FLQ.URL object
      */
     FLQ.URL.prototype.toRelative = function () {
-        var s = '';
-        if (this.path != null) s+= this.path;
-        var a = this.toArgs(this.args);
-        if (a.length) s+= '?'+a;
-        if (this.anchor != null) s+= '#'+this.anchor;
+        var s = ''
+        if (this.path != null) s+= this.path
+        var a = this.toArgs(this.args)
+        if (a.length) s+= '?'+a
+        if (this.anchor != null) s+= '#'+this.anchor
 
-        return s;
+        return s
     }
 
     /**
      * isHost() is used to determine whether the host in the FLQ.URL object matches the current host
      */
     FLQ.URL.prototype.isHost = function () {
-        var u = FLQ.URL.thisURL();
-        return (this.host == null || this.host == u.host ? true : false);
+        var u = FLQ.URL.thisURL()
+        return (this.host == null || this.host == u.host ? true : false)
     }
 
     /**
      * toString() returns a string containing the current FLQ.URL object as a URL
      */
     FLQ.URL.prototype.toString = function () {
-        return (this.isHost() ? this.toRelative() : this.toAbsolute());
+        return (this.isHost() ? this.toRelative() : this.toAbsolute())
     }
 
     FLQ.URL.encode = function (s) {
@@ -255,4 +250,4 @@
         }
 
         return r
-    }
+    };
