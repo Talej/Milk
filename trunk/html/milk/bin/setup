@@ -1,0 +1,92 @@
+#!/bin/sh
+
+echo "checking out code from SVN repo..."
+svn co --force https://seed1.projectlocker.com/sau/Milk/svn/trunk/html/ html
+
+mkdir html/css
+touch html/css/style.css
+mkdir html/img
+
+echo ""
+echo "Set up site theme [y/N]:"
+read dotheme
+
+
+if [ $dotheme = "y" ]; then
+    echo "Enter a theme name, followed by [ENTER]:"
+    read theme
+
+    cd html/milk/bin
+    ./mktheme $theme
+    cd ../../..
+else
+    theme="default"
+fi
+
+echo "Set up default URL mapping [y/N]:"
+read domap
+
+if [ $domap = "y" ]; then
+    cat > html/index.php <<EOF
+<?php
+
+    define('MILK_PATH', dirname(__FILE__));
+    include(MILK_PATH . '/milk/milk.php');
+
+    MilkLauncher::loadConfig();
+    MilkLauncher::load(MILK_BASE_DIR, 'util', 'compat.php');
+    MilkLauncher::load(MILK_BASE_DIR, 'util', 'sql.php');
+    MilkLauncher::load(MILK_APP_DIR, 'lib', 'sql.php');
+    MilkLauncher::http_virtualise();
+
+    session_start();
+
+    if (preg_match('/milk(js|css)\/([a-f0-9]{32})\.(js|css)/', \$_SERVER['PHP_SELF'], \$m)) {
+        MilkLauncher::load(MILK_BASE_DIR, 'util', 'tools.php');
+        MilkLauncher::load(MILK_BASE_DIR, 'util', 'compress.php');
+
+        \$compress = new FLQCompress(\$m[1]);
+        if (!\$compress->output(\$m[2])) {
+            error_404();
+        }
+        exit;
+    } else if (preg_match('/\/flq(img|media)\/[0-9]+/', \$_SERVER['PHP_SELF'])) {
+        \$milk = new MilkLauncher('Media'); // Note - to use this the media module will be required
+    } else if (preg_match('/\/(.+)\.html/', \$_SERVER['PHP_SELF'], \$m)) {
+        \$module = preg_replace('/[^A-z0-9]+/', '', \$m[1]);
+        if (MilkLauncher::moduleExists(\$module)) {
+            \$milk = new MilkLauncher(\$module);
+            \$milk->addControlSet('$theme');
+            \$milk->module->theme = '$theme';
+        }
+    } else if (preg_match('/\/(.+)\/.+\.html/', \$_SERVER['PHP_SELF'], \$m)) {
+        \$module = preg_replace('/[^A-z0-9]+/', '', \$m[1]);
+        if (MilkLauncher::moduleExists(\$module)) {
+            \$milk = new MilkLauncher(\$module);
+            \$milk->addControlSet('$theme');
+            \$milk->module->theme = '$theme';
+        }
+    } else if (\$_SERVER['PHP_SELF'] == '/') {
+        \$milk = new MilkLauncher('Home');
+        \$milk->addControlSet('$theme');
+        \$milk->module->theme = '$theme';
+    }
+
+    if (isset(\$milk)) {
+        MilkLauncher::http_set_status(200);
+        \$milk->module->run();
+    } else {
+        error_404();
+    }
+
+    function error_404() {
+        MilkLauncher::http_set_status(404);
+        \$milk = new MilkLauncher('NotFound');
+        \$milk->module->theme = '$theme';
+        \$milk->module->run();
+        exit;
+    }
+
+EOF
+
+fi
