@@ -85,6 +85,8 @@
                 $tag = $endtag = 'div';
             }
 
+            if ($ctrl->cssclass) $class.= ' ' . $ctrl->cssclass;
+
             $style = '';
             if ($ctrl->nowrap) $style.= 'white-space:nowrap;';
             if ($ctrl->color != '') $style.= 'color:#' . $ctrl->color . ';';
@@ -97,7 +99,7 @@
                 $tooltip = '<span class="tooltip">' . $this->entitise($ctrl->tooltip) . '</span>';
             }
 
-            $str = '<' . $tag . ' id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '"' . $style . '>' . $this->entitise($ctrl->value) . $tooltip . '</' . $endtag . '>';
+            $str = '<' . $tag . ' id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '"' . $style . '>' . nl2br($this->entitise($ctrl->value)) . $tooltip . '</' . $endtag . '>';
 
             $this->put('xhtml', $str);
         }
@@ -190,7 +192,7 @@
                 $class.= ' image-link';
                 $jsconn = TRUE;
                 $endtag = 'a';
-                if (($conns = $ctrl->getConnections('click')) && count($conns) == 1) {
+                if (($conns = $ctrl->getConnections('click')) && $ctrl->hasAnyConnected() == 1) {
                     $c = $conns[0];
                     if (
                         @$c->args['send'] == FALSE &&
@@ -209,7 +211,7 @@
 
                 if ($jsconn) {
                     $this->jsControl($ctrl);
-                    $tag = 'div';
+                    $tag = $endtag = 'div';
                 }
             } else {
                 $tag = $endtag = 'div';
@@ -254,6 +256,10 @@
         }
 
         public function Box($ctrl) {
+            if ($ctrl->hasAnyConnected()) {
+                $this->jsControl($ctrl);
+            }
+
             $class = 'box';
             if ($ctrl->cssclass) $class.= ' ' . $this->entitise($ctrl->cssclass);
 
@@ -266,7 +272,7 @@
 
             $this->deliverChildren($ctrl);
 
-            $str = '<div class="' . $class . '"' . $style . '>' . $this->get('xhtml') . '<div style="clear:both"></div></div>';
+            $str = '<div id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '"' . $style . '>' . $this->get('xhtml') . '<div style="clear:both"></div></div>';
 
             $this->put('xhtml', $str);
         }
@@ -481,7 +487,7 @@
 
                 if ($jsconn) {
                     $jsprops = array(
-                        'dodisable' => $ctrl->hasSlotConnected('slotdone')
+                        'dodisable' => MilkTools::jsEncode($ctrl->hasSlotConnected('slotdone'), JSTYPE_BOOL)
                     );
 
                     $this->jsControl($ctrl, $jsprops);
@@ -703,11 +709,16 @@
 
             // TODO: attribs
             print '<' . $ctrl->entitise($ctrl->tag);
+            if (!empty($ctrl->props)) {
+                foreach ($ctrl->props as $key => $val) {
+                    print ' ' . $this->entitise($key) . '="' . $this->entitise($val) . '"';
+                }
+            }
             if (count($ctrl->controls) > 0) {
                 print '>';
                 $this->deliverChildren($ctrl);
                 print '</' . $ctrl->entitise($ctrl->tag) . '>';
-            } else if ($ctrl->value != '__XML_NOVALUE__') {
+            } else if ($ctrl->value !== '__XML_NOVALUE__') {
                 print '>' . $ctrl->entitise($ctrl->value) . '</' . $ctrl->entitise($ctrl->tag) . '>';
             } else {
                 print '/>';

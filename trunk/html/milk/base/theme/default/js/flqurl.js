@@ -105,7 +105,7 @@
     FLQ.URL.prototype.parseURL = function (url) {
         // TODO: Add support for ftp username
         var p = {}, m
-        if (m = url.match(/((s?ftp|https?):\/\/)?([^\/:]+)?(:([0-9]+))?([^\?#]+)?(\?([^#]+))?(#(.+))?/)) {
+        if (m = url.match(/((s?ftp|https?):\/\/)?([^\/:\?]+)?(:([0-9]+))?([^\?#]+)?(\?([^#]+))?(#(.+))?/)) {
             p['scheme'] = (m[2]  ? m[2] : 'http')
             p['host']   = (m[3]  ? m[3] : window.location.host)
             p['port']   = (m[5]  ? m[5] : null)
@@ -166,7 +166,10 @@
             for (i in a) {
                 if (typeof a[i] != 'function') {
                     if (s.length) s+= '&'
-                    if (typeof a[i] == 'object') { // TODO: Change this to use is_object
+                    if (a[i] == null) {
+                        k = (p.length ? p+'['+i+']' : i)
+                        s+= k+'='
+                    } else if (typeof a[i] == 'object') { // TODO: Change this to use is_object
                         k = (p.length ? p+'['+i+']' : i)
                         s+= this.toArgs(a[i], k)
                     } else { // TODO: Change this to use is_function
@@ -174,6 +177,7 @@
                     }
                 }
             }
+
             return s
         }
 
@@ -227,7 +231,7 @@
             c = s.substr(i,1)
             if (c == ' ') {
                 c = '+'
-            } else if (FLQ.URL.cs.indexOf(c) == -1) {
+            } else if (cs.indexOf(c) == -1) {
                 c = '%'+FLQ.toHex(c)
             }
             r += c

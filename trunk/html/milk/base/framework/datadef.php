@@ -239,7 +239,7 @@
         public function savesubset($subset, $pk=NULL, $pkmap=NULL) {
             if ($pk === NULL) $pk = $this->getPk();
             if ($this->isValidPk() && $this->getAttrib($subset, DD_ATTR_TYPE) == 'datadef' && ($sds = $this->getAttrib($subset, DD_ATTR_DEF))) {
-                if (strlen($sbs->table) == 0) trigger_error('dataDef::savesubset() - Can not save data without a table name', E_USER_ERROR);
+                if (strlen($sds->table) == 0) trigger_error('dataDef::savesubset() - Can not save data without a table name', E_USER_ERROR);
                 if (isset($this->subsavedata[$subset]) && is_array($this->subsavedata[$subset])) {
                     $newpk = array();
                     if (is_array($pkmap)) {
@@ -266,6 +266,8 @@
                     } else {
                         trigger_error('dataDef::savesubset() - A problem occured while deleting old records');
                     }
+                } else {
+                    return TRUE;
                 }
             } else {
                 trigger_error('dataDef::savesubset() - Unable to save subset due to an invalid primary key or missing data definition', E_USER_ERROR);

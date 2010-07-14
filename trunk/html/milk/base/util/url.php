@@ -25,8 +25,8 @@
             $url->protocol  = $data['scheme'];
             $url->host      = $data['host'];
             $url->port      = $data['port'];
-            $url->path      = substr($_SERVER['REQUEST_URI'], 0, strcspn($_SERVER['REQUEST_URI'], '?'));
-            $url->arguments = self::parseArgs($_SERVER['QUERY_STRING']);
+            $url->path      = substr(@$_SERVER['REQUEST_URI'], 0, strcspn(@$_SERVER['REQUEST_URI'], '?'));
+            $url->arguments = self::parseArgs(@$_SERVER['QUERY_STRING']);
 
             return $url;
         }

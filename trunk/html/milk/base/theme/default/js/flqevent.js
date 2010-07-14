@@ -63,16 +63,27 @@
         if (typeof n.removeEventListener != 'undefined') {
             n.removeEventListener(e, f, cap)
         } else if (typeof n.detachEvent != 'undefinded') {
-            var f = FLQ.event.getFunc(n, e, f)
+            var f = FLQ.event.delFunc(n, e, f)
             n.detachEvent('on' + event, f)
         }
     }
 
-    FLQ.event.getFunc = function (n, e, f) {
-        if (typeof FLQ.event.f[e] == 'undefined') FLQ.event.f[e] = {}
-        if (typeof FLQ.event.f[e][n] == 'undefined') FLQ.event.f[e][n] = {}
-        if (typeof FLQ.event.f[e][n][f] == 'undefined') FLQ.event.f[e][n][f] = function (v) { if (!v) v = window.event; f.apply(n, [v]) }
-        return FLQ.event.f[e][n][f]
+    FLQ.event.getFunc = function (n, ev, f) {
+        if (typeof FLQ.event.f[ev] == 'undefined') FLQ.event.f[ev] = {}
+        if (typeof FLQ.event.f[ev][n] == 'undefined') FLQ.event.f[ev][n] = {}
+        var nf = function (e) { if (!e) e = window.event; f.apply(n, [e]) }
+        FLQ.event.f[ev][n][f] = {func : nf}
+        return nf
+    }
+
+    FLQ.event.delFunc = function (n, ev, f) {
+        if (FLQ.event.f && FLQ.event.f[ev] && FLQ.event.f[ev][n] && FLQ.event.f[ev][n][f]) {
+            var nf = FLQ.event.f[ev][n][f]['func']
+            delete FLQ.event.f[ev][n][f]
+            return nf
+        }
+
+        return f
     }
 
     /**

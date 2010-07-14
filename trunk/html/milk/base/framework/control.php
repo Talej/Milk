@@ -15,6 +15,7 @@
         public $signals = array();
         public $slots   = array();
         public $strictConns = TRUE;
+        public $cssclass;
 
         public function __construct($parent, $id=NULL) {
             $this->parent = $parent;
@@ -129,7 +130,7 @@
 
             $conn = new MilkConnection($this, $signal, $target, $slot, $args);
             $this->connections[] = $conn;
-            $target->slotConnections[] = $conn;
+            if ($target instanceof MilkControl) $target->slotConnections[] = $conn;
         }
 
         public function hasSignal($signal) {
@@ -179,7 +180,7 @@
 
         public function hasAnyConnected() {
             foreach ($this->signals as $signal) {
-                if ($this->hasConnected($signal)) return TRUE;
+                if ($this->hasConnected($signal)) return count($this->connections);
             }
 
             return FALSE;

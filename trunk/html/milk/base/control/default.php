@@ -32,7 +32,8 @@
     }
 
     class Image_MilkControl extends MilkControl {
-        public $signals = array('click');
+        public $signals = array('click', 'over', 'out');
+        public $slots = array('setsrc');
         public $src;
         public $width;
         public $height;
@@ -80,6 +81,7 @@
         public $flex = 1;
         public $cssclass;
         public $width;
+        public $signals = array('click');
     }
 
     class VerticalBox_MilkControl extends MilkControl {

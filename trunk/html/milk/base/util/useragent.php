@@ -33,6 +33,7 @@
         public $appver;
         public $appmajver;
         public $appminver;
+        public $device;
 
         /**
          * constructor function for the FLQUserAgent class
@@ -54,6 +55,7 @@
                 $this->appver    = $parts['appver'];
                 $this->appmajver = $parts['appmajver'];
                 $this->appminver = $parts['appminver'];
+                $this->device    = $parts['device'];
             }
         }
 
@@ -77,7 +79,8 @@
                 'app'       => NULL,
                 'appver'    => NULL,
                 'appmajver' => NULL,
-                'appminver' => NULL
+                'appminver' => NULL,
+                'device'    => NULL
             );
 
             if (preg_match('/Mozilla\/[0-9\.]+\s*\([^;]+;\s*([^\s]+)\s([0-9\.]+);\s*(([^\s]+)[^;]+)/i', $this->agentstr, $m)) {
@@ -119,7 +122,7 @@
                     $parts['appmajver'] = $m[7];
                     $parts['appminver'] = $m[8];
                 } else {
-                    $parts['app'] = $m[10];
+                    $parts['app'] = @$m[10];
                     $parts['appver'] = $m[6];
                     $parts['appmajver'] = $m[7];
                     $parts['appminver'] = $m[8];
@@ -138,6 +141,11 @@
                 $parts['appver'] = $m[2];
                 $parts['appmajver'] = $m[3];
                 $parts['appminver'] = $m[4];
+            }
+
+            // TODO: Match an array of other device types
+            if (preg_match('/iphone/i', $this->agentstr)) {
+                $parts['device'] = 'iPhone';
             }
 
             return $parts;

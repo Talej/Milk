@@ -184,9 +184,11 @@
         }
 
         public function jsControl($ctrl, $props=NULL) {
+            if (!$ctrl->strictConns) $props['strictConns'] = MilkTools::jsEncode(FALSE, JSTYPE_BOOL);
+
             $str = 'Milk.add(' . MilkTools::jsEncode($ctrl->name) . ', '
                  . MilkTools::jsEncode($this->getID($ctrl, '')) . ', '
-                 . MilkTools::jsEncode((array)$props, JSTYPE_HASH) . ').init();';
+                 . MilkTools::jsEncode((array)$props, JSTYPE_HASH, FALSE) . ').init();';
 
             $this->put('constructjs', $str);
 

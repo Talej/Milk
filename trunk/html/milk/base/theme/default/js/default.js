@@ -172,6 +172,7 @@
             }
 
             function add_field(frm, key, val) {
+                if (key == null) return
                 if (FLQ.isObj(key)) {
                     for (var i in key) {
                         if (!FLQ.isFunc(key[i])) {
@@ -303,8 +304,11 @@
                 for (var n,i = 0; frm.childNodes[i]; i++) {
                     n = frm.childNodes[i]
                     if (n.nodeType == 1 && n.nodeName == 'INPUT' && n.getAttribute('type') == 'hidden' && !(/^response\[/.exec(n.name))) {
-                        if (data[0]) data += '&'
-                        data += escape(n.name)+'='+escape(n.value)
+                        if (data.length > 0) data += '&'
+                        // without encodeURIComponent characters like & break the post
+                        // but using escape will break unicode characters.
+                        // Is there any problems with using encodeURIComponent?
+                        data += escape(n.name)+'='+encodeURIComponent(n.value)
                     }
                 }
                 for (var i in ajaxResponse) {
@@ -354,8 +358,9 @@
     }
 
     var MilkCtrl = function () {
-        this.id      = null
-        this.signals = null
+        this.id          = null
+        this.signals     = null
+        this.strictConns = true
     }
 
     MilkCtrl.prototype = {}
@@ -441,6 +446,7 @@
     MilkCtrl.prototype.execSlot = function (slot, args, e) {
         if (this.hasSlot(slot)) {
             this[slot](args, e)
+            if (!this.strictConns) this.sendSignal(slot, args, e)
         } else if (!this.strictConns) {
             this.sendSignal(slot, args, e)
         } else {
@@ -519,7 +525,16 @@
         this.n = $(this.id)
 
         var c = this
-        FLQ.e.add(this.n, 'click', function () { c.sendSignal('click') })
+        FLQ.e.add(this.n, 'click', function () { window.status='click'+c.id; c.sendSignal('click') })
+        FLQ.e.add(this.n, 'mouseover', function () { window.status = 'over'+c.id; c.sendSignal('over') })
+        FLQ.e.add(this.n, 'mouseout', function () { c.sendSignal('out') })
+    }
+
+    Milk.Ctrl.Image.prototype.setsrc = function (args) {
+        var v
+        if (v = Milk.getArg(args, 'value')) {
+            this.n.firstChild.src = v
+        }
     }
 
     /**
@@ -558,6 +573,22 @@
         } else {
             window.location = '/'
         }
+    }
+
+    /**
+     * Box control
+     */
+    Milk.Ctrl.Box = function (id) {
+        this.id = id
+    }
+
+    Milk.Ctrl.Box.prototype = new MilkCtrl()
+
+    Milk.Ctrl.Box.prototype.init = function () {
+        this.n = $(this.id)
+        
+        var c = this
+        FLQ.e.add(this.n, 'click', function () { c.sendSignal('click') })
     }
 
     /**
@@ -900,7 +931,7 @@
             this.n.value = v
         }
 
-        this.sendSignal('slotdone');
+        this.sendSignal('slotdone')
     }
 
     Milk.Ctrl.Form.prototype.focus = function () {

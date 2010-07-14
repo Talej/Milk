@@ -102,6 +102,10 @@
         return r
     }
 
+    FLQ.nl2br = function (s) {
+        return String(s).replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1<br />$2')
+    }
+
     FLQ.addClass = function (n, c) {
         var m = n.className.split(/ +/), f = false, s = ''
         for (i in m) {
@@ -127,9 +131,11 @@
     }
 
     FLQ.hasClass = function (n, c) {
-        var m = n.className.split(/ +/)
-        for (i in m) {
-            if (m[i] == c) return true
+        if (n.className) {
+            var m = n.className.split(/ +/)
+            for (i in m) {
+                if (m[i] == c) return true
+            }
         }
 
         return false
@@ -311,11 +317,13 @@
             var d = i.getElementsByTagName('iframe')[0].contentWindow.document
             // TODO: Work out where the 4px is coming from
             if (d.body) {
-                if (d.height) {
-                    i.style.height = Math.min(Math.max(d.height, d.body.offsetHeight, d.body.clientHeight)+6, window.top.innerHeight-60)+'px'
-                } else {
-                    i.style.height = Math.min(Math.max(d.body.scrollHeight, d.body.offsetHeight, d.body.clientHeight)+6, window.top.document.documentElement.clientHeight-60)+'px'
-                }
+                css = FLQ.getStyle(i)
+                i.style.height = (d.body.scrollHeight+FLQ.ifNaN(parseInt(css.paddingTop),0)+FLQ.ifNaN(parseInt(css.paddingBottom),0))+'px'
+//                 if (d.height) {
+//                     i.style.height = Math.min(Math.max(d.height, d.body.offsetHeight, d.body.clientHeight)+6, window.top.innerHeight-60)+'px'
+//                 } else {
+//                     i.style.height = Math.min(Math.max(d.body.scrollHeight, d.body.offsetHeight, d.body.clientHeight)+6, window.top.document.documentElement.clientHeight-60)+'px'
+//                 }
             }
             FLQ.lbox.setCenterPos(i)
         }
@@ -332,7 +340,7 @@
             FLQ.lbox.X = e.screenX
             FLQ.lbox.Y = e.screenY
             FLQ.lbox.resizing = true
-            FLQ.event.stopPropagation(e)
+            FLQ.event.stopEvent(e)
         }
     }
 
@@ -677,17 +685,17 @@
         this.asynchronous = true
         this.svr          = null
 
-        if (arguments.length > 1) this.addHandler(callback)
-    }
+        this.addHandler = function (func, status, state) {
+            if (arguments.length < 2) status = 200
+            if (arguments.length < 3) state = 4 // 4 = ready state complete
 
-    FLQ.ajax.prototype.addHandler = function (func, status, state) {
-        if (arguments.length < 2) status = 200
-        if (arguments.length < 3) state = 4 // 4 = ready state complete
-
-        if (FLQ.isFunc(func)) {
-            if (!FLQ.isObj(this.handlers[state])) this.handlers[state] = {}
-            this.handlers[state][status] = func
+            if (FLQ.isFunc(func)) {
+                if (!FLQ.isObj(this.handlers[state])) this.handlers[state] = {}
+                this.handlers[state][status] = func
+            }
         }
+
+        if (arguments.length > 1) this.addHandler(callback)
     }
 
     FLQ.ajax.prototype.addHeader = function (key, val) {

@@ -78,6 +78,7 @@
                                     $dd->subsavedata[$field] = array();
                                     foreach ($request[$field] as $subreq) {
                                         $sdd->validate($subreq);
+                                        $sdd->module->presave($sdd);
                                         $dd->subsavedata[$field][] = $sdd->savedata;
                                         $dd->errors = array_merge($dd->errors, $sdd->errors);
                                     }
@@ -314,12 +315,12 @@
             if (is_array($val) && isset($val['error'])) {
                 switch ($val['error']) {
                     case UPLOAD_ERR_INI_SIZE:
-                        self::setError(sprintf('%s exceeds the maximum upload size of %d', MilkTools::ifNull(self::getProp($props, 'label'), self::createLabel($key)), ini_get('upload_max_filesize')));
+                        self::setError(sprintf('%s exceeds the maximum upload size of %dMb', MilkTools::ifNull(self::getProp($props, 'label'), self::createLabel($key)), ini_get('upload_max_filesize')));
                         $val = NULL;
                         return FALSE;
 
                     case UPLOAD_ERR_FORM_SIZE:
-                        self::setError(sprintf('%s exceeds the maximum upload size of %d', MilkTools::ifNull(self::getProp($props, 'label'), self::createLabel($key)), $_REQUEST['MAX_FILE_SIZE']));
+                        self::setError(sprintf('%s exceeds the maximum upload size of %dMb', MilkTools::ifNull(self::getProp($props, 'label'), self::createLabel($key)), $_REQUEST['MAX_FILE_SIZE']));
                         $val = NULL;
                         return FALSE;
 
