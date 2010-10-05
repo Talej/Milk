@@ -106,6 +106,7 @@
 
     class MilkLauncher extends MilkFrameWork {
         public $module;
+        public $config;
         protected $moduleName;
         static protected $HTTPStatuses = array(
             '200' => 'OK',
@@ -131,7 +132,7 @@
             $this->load(MILK_BASE_DIR, 'util', 'useragent.php');
 
             // load config
-            $this->loadConfig();
+            $this->config = $this->loadConfig();
 
             // Load base and extension controls
             $this->loadDir(MILK_BASE_DIR, 'control');
@@ -176,9 +177,15 @@
         }
 
         public static function loadConfig() {
+            self::load(MILK_BASE_DIR, 'framework', 'config.php');
+            $GLOBALS['config'] = new MilkConfig();
+
             self::loadDir(MILK_APP_DIR, 'config');
             self::loadDir(MILK_EXT_DIR, 'config');
             self::load(MILK_BASE_DIR, 'config', 'default.php');
+
+            $GLOBALS['config']->define();
+            return $GLOBALS['config'];
         }
 
         static public function mkPath($arg) {
@@ -205,6 +212,7 @@
                 $classname = str_replace('.', '', $this->moduleName) . '_MilkModule';
                 if (class_exists($classname) && is_subclass_of($classname, 'MilkModule')) {
                     $this->module = new $classname();
+                    $this->module->config = $this->config;
                     return TRUE;
                 } else {
                     trigger_error('MilkLauncher::loadModule() - Unable to load module class ' . $classname, E_USER_ERROR);

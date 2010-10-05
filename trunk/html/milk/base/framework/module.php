@@ -1,6 +1,7 @@
 <?php
 
     class MilkModule extends MilkFrameWork {
+        public $config;
         public $defaultAction = 'act_index';
         public $theme         = 'default';
         public $idSeq         = 0;
@@ -53,13 +54,21 @@
 
         public function prepare() { }
 
-        public function execute() {
+        public function getAction() {
             if (isset($this->request['act']) && method_exists($this, $this->request['act'])) {
-                $this->{$this->request['act']}();
+                return $this->request['act'];
             } else if (method_exists($this, $this->defaultAction)) {
-                $this->{$this->defaultAction}();
+                return $this->defaultAction;
             } else {
                 trigger_error('MilkModule::execute() - Unable to find action to execute', E_USER_ERROR);
+            }
+            
+            return NULL;
+        }
+
+        public function execute() {
+            if ($action = $this->getAction()) {
+                $this->{$action}();
             }
         }
 
@@ -234,6 +243,7 @@
                 // action is overwriten.
                 $classname = get_class($this);
                 $module                = new $classname();
+                $module->config        = $this->config;
                 $module->theme         =& $this->theme;
                 $module->db            = $this->db;
                 $module->history       =& $this->history;
@@ -351,6 +361,26 @@
                             $tmp = $record->{$key};
                             $record->{$key} = new MilkDateTime();
                             $record->{$key}->fromDBString($tmp);
+                            break;
+                            
+                        case 'number':
+                            switch ($this->config->get('NUMBER_FORMAT')) {
+                                case 0: $record->{$key} = number_format($record->{$key}, 0, '.', ''); break;
+                                case 1: $record->{$key} = number_format($record->{$key}, 2, '.', ''); break;
+                                case 2: $record->{$key} = number_format($record->{$key}, 2, '.', ','); break;
+                                case 3: $record->{$key} = number_format($record->{$key}, 0, '.', ','); break;
+                            }
+                            if ($attr = $dd->getAttrib($key, DD_ATTR_PREFIX)) {
+                                $record->{$key} = $attr . $record->{$key};
+                            }
+                            break;
+                            
+                        case 'custom':
+                            if ($attr = $dd->getAttrib($key, DD_ATTR_CLASS)) {
+                                $tmp = $record->{$key};
+                                $record->{$key} = new $attr($this->db);
+                                $record->{$key}->fromDBString($tmp);
+                            } // TODO: Do we throw an error here if there's no class?
                             break;
                     }
                 }

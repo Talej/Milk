@@ -511,6 +511,8 @@
         }
 
         public function TextBox($ctrl) {
+            if (!is_string($ctrl->reqValue)) $ctrl->reqValue = $this->entitise($ctrl->reqValue);
+
             $jsprops = array(
                 'value'    => MilkTools::jsEncode($ctrl->value, JSTYPE_STRING),
                 'reqValue' => MilkTools::jsEncode($ctrl->reqValue, JSTYPE_STRING)
@@ -624,10 +626,18 @@
             if ($ctrl->disabled) $props['disabled'] = 1;
             if ($ctrl->readonly) $props['readonly'] = 1;
 
+            $value = (isset($wgt->value[1]) ? $wgt->value[1] : NULL);
+            if (isset($_REQUEST[$this->getID($ctrl, '')]) && is_array($_REQUEST[$this->getID($ctrl, '')])) {
+                $tmpreq = $_REQUEST[$this->getID($ctrl, '')];
+                $_REQUEST[$this->getID($ctrl, '')] = $_REQUEST[$this->getID($ctrl, '')][1];
+            }
+
             $str = '<div id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '">'
                  . FLQForm::textbox($this->getID($ctrl, ''), $props, @$ctrl->reqValue[1])
                  . '<div class="choosebox-button"></div>'
                  . '</div>';
+
+            if (isset($tmpreq)) $_REQUEST[$this->getID($ctrl, '')] = $tmpreq;
 
             $this->put('xhtml', $str);
         }
@@ -707,7 +717,6 @@
                 print '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' . "\n";
             }
 
-            // TODO: attribs
             print '<' . $ctrl->entitise($ctrl->tag);
             if (!empty($ctrl->props)) {
                 foreach ($ctrl->props as $key => $val) {

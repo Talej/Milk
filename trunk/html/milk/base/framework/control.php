@@ -15,6 +15,7 @@
         public $signals = array();
         public $slots   = array();
         public $strictConns = TRUE;
+        public $savegroup;
         public $cssclass;
 
         public function __construct($parent, $id=NULL) {
@@ -28,6 +29,7 @@
             $this->name   = str_replace('_MilkControl', '', get_class($this));
             
             $this->setRequest();
+            if (strlen($this->savegroup) > 0) $this->setSaveGroup();
         }
 
         public static function create($p, $ctrl) {
@@ -87,6 +89,15 @@
             return FALSE;
         }
 
+        public function setSaveGroup() {
+            if (!empty($this->controls)) {
+                foreach ($this->controls as $key => $ctrl) {
+                    $ctrl->savegroup = $this->savegroup;
+                    $ctrl->setSaveGroup();
+                }
+            }
+        }
+
         public function add($ctrl) {
             $args = func_get_args();
             $cb = array('MilkControl', 'create');
@@ -100,6 +111,9 @@
 
         public function deliver($theme) {
             if ($theme instanceof MilkTheme) {
+                // If this control has a savegroup, then apply it to all its children.
+                if (!is_null($this->savegroup)) $this->setSaveGroup();
+
                 $cb = array($theme, str_replace('_MilkControl', '', get_class($this)));
                 if (is_callable($cb)) {
                     call_user_func($cb, $this);

@@ -16,3 +16,7 @@
     .horizontalbox table td {
         position:static;
     }
+
+    .tabs .tablabels {
+        border:1px solid transparent;
+     }

@@ -15,7 +15,7 @@
                 $this->timestamp = time();
             } else {
                 if ($format == NULL) $format = $this->format;
-                if (is_string($date) && ($p = strptime($date, $format))) {
+                if (is_string($date) && ($p = $this->strptime($date, $format))) {
                     if ($time = mktime($p['tm_hour'], $p['tm_min'], $p['tm_sec'], $p['tm_mon']+1, $p['tm_mday'], $p['tm_year']+1900)) {
                         $this->timestamp = $time;
                         return TRUE;
@@ -53,6 +53,19 @@
             }
 
             return NULL;
+        }
+        
+        public function strptime($date, $format) {
+            if ($p = strptime($date, $format)) {
+                if ($this instanceof MilkDateTime) {
+                    return $p;
+                } else {
+                    $p['tm_hour'] = $p['tm_min'] = $p['tm_sec'] = 0;
+                    return $p;
+                }
+            }
+            
+            return FALSE;
         }
     }
 

@@ -1,5 +1,5 @@
 
-    var $ = function (i) { return document.getElementById('mlk-'+i) }
+    var _$ = function (i) { return document.getElementById('mlk-'+i) }
 
     var Milk = {
         SLOT_SAMEWIN   : '_self',
@@ -11,6 +11,7 @@
         errors         : [],
         history        : [],
         c              : {},
+        saveGroups     : {},
         NOTIFY_ERROR   : 'error',
         NOTIFY_WARNING : 'warning',
         NOTIFY_MESSAGE : 'message'
@@ -21,6 +22,7 @@
         // TODO: Check that a control with that id doesn't exist
         var c = new Milk.Ctrl[ctrl](id)
         c.setProps(props)
+        if (c.saveGroup) c.setSaveGroup(c.saveGroup)
         Milk.c[id] = c
         return c
     }
@@ -41,7 +43,7 @@
 
     Milk.mergeArgs = function () {
         var args = {}, i, j
-        for (i = 0; arguments[i]; i++) {
+        for (i=0; i < arguments.length; i++) {
             if (FLQ.isObj(arguments[i])) {
                 for (j in arguments[i]) {
                     if (!FLQ.isFunc(arguments[i][j])) args[j] = arguments[i][j]
@@ -82,7 +84,7 @@
         }
     }
 
-    Milk.notify = function(t, err) {
+    Milk.notify = function (t, err) {
         var s = ''
         for (var i=0; err[i]; i++) {
             s+= '- '+err[i]+'\n'
@@ -182,7 +184,7 @@
                 } else if (FLQ.isObj(val)) {
                     for (var i in val) {
                         if (!FLQ.isFunc(val[i])) {
-                            add_field(frm, key+'['+i+']', val[i])
+                            try { add_field(frm, key+'['+i+']', val[i]) } catch(e) { }
                         }
                     }
                 } else {
@@ -298,6 +300,7 @@
             add_field(frm, args)
 
             if (this.dest == Milk.SLOT_AJAX) {
+                add_field(frm, 'ajax', 1)
                 var ajax = new FLQ.ajax(frm.getAttribute('action'))
                 ajax.method = 'POST'
                 var data = ''
@@ -331,7 +334,7 @@
     Milk.Conn.ajaxResponse = function (dest, slot, args) {
         var c = new Milk.Conn(null, null, dest, slot, args)
         var f = function (svr) {
-            c.exec({'svr':svr, 'validate':false})
+            c.exec({'svr':svr, 'validate':false, 'require':false})
             Milk.Conn.ajaxShowErrors(svr)
         }
 
@@ -347,9 +350,8 @@
                     s.push(e[i].firstChild.nodeValue)
                 }
             }
-            if (s[0]) {
-                alert('- '+s.join('\n- '))
-            }
+            
+            if (s[0]) Milk.notify(Milk.NOTIFY_ERROR, s)
         }
     }
 
@@ -361,6 +363,7 @@
         this.id          = null
         this.signals     = null
         this.strictConns = true
+        this.saveGroup   = null
     }
 
     MilkCtrl.prototype = {}
@@ -446,12 +449,40 @@
     MilkCtrl.prototype.execSlot = function (slot, args, e) {
         if (this.hasSlot(slot)) {
             this[slot](args, e)
-            if (!this.strictConns) this.sendSignal(slot, args, e)
+            if (!this.strictConns) {
+                if (FLQ.isSet(typeof args['svr'])) delete args['svr']
+                this.sendSignal(slot, args, e)
+            }
         } else if (!this.strictConns) {
+            if (FLQ.isSet(typeof args['svr'])) delete args['svr']
             this.sendSignal(slot, args, e)
         } else {
             throw('Unable to execute slot '+slot)
         }
+    }
+
+    MilkCtrl.prototype.setSaveGroup = function (g) {
+        if (FLQ.isStr(g) && g.length > 0) {
+            if (!FLQ.isSet(typeof Milk.saveGroups[g])) Milk.saveGroups[g] = []
+            Milk.saveGroups[g].push(this)
+            this.saveGroup = Milk.saveGroups[g]
+            if (this.hasChanged) {
+                this._hasChanged = this.hasChanged
+                this.hasChanged = this.hasGroupChanged
+            }
+        }
+    }
+
+    MilkCtrl.prototype.hasGroupChanged = function () {
+        if (FLQ.isArr(this.saveGroup)) {
+            for (var i=0; this.saveGroup[i]; i++) {
+                if (this.saveGroup[i]._hasChanged()) {
+                    return true
+                }
+            }
+        }
+
+        return false
     }
 
     MilkCtrl.prototype.refresh = function () {
@@ -474,7 +505,7 @@
     Milk.Ctrl.Text.prototype = new MilkCtrl()
 
     Milk.Ctrl.Text.prototype.init = function () {
-        this.n = $(this.id)
+        this.n = _$(this.id)
         var c = this
         FLQ.e.add(this.n, 'click', function (e) { c.sendSignal('click'); FLQ.e.stopEvent(e) })
     }
@@ -490,7 +521,7 @@
     Milk.Ctrl.Label.prototype = new MilkCtrl()
 
     Milk.Ctrl.Label.prototype.init = function () {
-        this.n = $(this.id)
+        this.n = _$(this.id)
         var c = this
         FLQ.e.add(this.n, 'click', function (e) { c.sendSignal('click'); FLQ.e.stopEvent(e) })
     }
@@ -506,7 +537,7 @@
     Milk.Ctrl.Heading.prototype = new MilkCtrl()
 
     Milk.Ctrl.Heading.prototype.init = function () {
-        this.n = $(this.id)
+        this.n = _$(this.id)
         var c = this
         FLQ.e.add(this.n, 'click', function (e) { c.sendSignal('click'); FLQ.e.stopEvent(e) })
     }
@@ -522,7 +553,7 @@
     Milk.Ctrl.Image.prototype = new MilkCtrl()
 
     Milk.Ctrl.Image.prototype.init = function () {
-        this.n = $(this.id)
+        this.n = _$(this.id)
 
         var c = this
         FLQ.e.add(this.n, 'click', function () { window.status='click'+c.id; c.sendSignal('click') })
@@ -585,7 +616,7 @@
     Milk.Ctrl.Box.prototype = new MilkCtrl()
 
     Milk.Ctrl.Box.prototype.init = function () {
-        this.n = $(this.id)
+        this.n = _$(this.id)
         
         var c = this
         FLQ.e.add(this.n, 'click', function () { c.sendSignal('click') })
@@ -602,7 +633,7 @@
     Milk.Ctrl.VerticalBox.prototype = new MilkCtrl()
 
     Milk.Ctrl.VerticalBox.prototype.init = function () {
-        this.n = $(this.id)
+        this.n = _$(this.id)
 
         var c = this
         if (this.fitHeight) setTimeout(function () { c.fillHeight(c.n); c.fillHeight(c.n.lastChild) }, 100)
@@ -627,7 +658,7 @@
     Milk.Ctrl.HideBox.prototype = new MilkCtrl()
 
     Milk.Ctrl.HideBox.prototype.init = function () {
-        this.n = $(this.id)
+        this.n = _$(this.id)
     }
 
     Milk.Ctrl.HideBox.prototype.show = function () {
@@ -683,7 +714,7 @@
     Milk.Ctrl.Tabs.prototype = new MilkCtrl()
 
     Milk.Ctrl.Tabs.prototype.init = function () {
-        this.n = $(this.id)
+        this.n = _$(this.id)
 
         if (this.n.firstChild && this.n.firstChild.childNodes) {
             var i, c = this, l = this.n.firstChild.childNodes
@@ -702,11 +733,11 @@
 
     Milk.Ctrl.Tabs.prototype.showTab = function (i) {
         var p = this.id+'-'+i+'-', s = this.id+'-'+this.tab+'-'
-        if (i != this.tab && !FLQ.hasClass($(p+'label'), 'tablabel-disabled')) {
-            FLQ.removeClass($(s+'label'), 'tablabel-selected')
-            FLQ.removeClass($(s+'tab'), 'tab-selected')
-            FLQ.addClass($(p+'label'), 'tablabel-selected')
-            FLQ.addClass($(p+'tab'), 'tab-selected')
+        if (i != this.tab && !FLQ.hasClass(_$(p+'label'), 'tablabel-disabled')) {
+            FLQ.removeClass(_$(s+'label'), 'tablabel-selected')
+            FLQ.removeClass(_$(s+'tab'), 'tab-selected')
+            FLQ.addClass(_$(p+'label'), 'tablabel-selected')
+            FLQ.addClass(_$(p+'tab'), 'tab-selected')
             Milk.editHistory([this.id, 'tab'], i)
             this.tab = i
         }
@@ -737,12 +768,14 @@
         this.offset          = null
         this.totalrows       = null
         this.connected       = false
+        this.sortCol         = 0
+        this.sortDesc        = false
     }
 
     Milk.Ctrl.DataGrid.prototype = new MilkCtrl()
 
     Milk.Ctrl.DataGrid.prototype.init = function () {
-        this.n = $(this.id)
+        this.n = _$(this.id)
         this.b = this.n.tBodies[0]
 
         var i, c = this, tr = this.n.getElementsByTagName('TR'), th = this.n.getElementsByTagName('TH')
@@ -812,7 +845,6 @@
     Milk.Ctrl.DataGrid.prototype.select = function (r, e) {
         if (this.f.search(r) == -1) this.focus(r, e)
         this.sendSignal('select')
-        
     }
 
     Milk.Ctrl.DataGrid.prototype.first = function () {
@@ -861,14 +893,15 @@
         this.id        = id
         this.n         = null
         this.dodisable = false
+        this.disabled  = false
     }
 
     Milk.Ctrl.Button.prototype = new MilkCtrl()
 
     Milk.Ctrl.Button.prototype.init = function () {
-        this.n = $(this.id)
+        this.n = _$(this.id)
         var c = this
-        FLQ.e.add(this.n, 'click', function (e) { if (c.dodisable) c.disable({disable:true}); c.sendSignal('click'); FLQ.e.stopEvent(e) })
+        FLQ.e.add(this.n, 'click', function (e) { if (!c.disabled) { if (c.dodisable) c.disable({disable:true}); c.sendSignal('click'); } FLQ.e.stopEvent(e) })
     }
 
     Milk.Ctrl.Button.prototype.disable = function (args) {
@@ -926,7 +959,13 @@
     }
 
     Milk.Ctrl.Form.prototype.setvalue = function (args) {
-        var v
+        var t, v
+        if (!FLQ.isSet(typeof args['value']) && FLQ.isSet(typeof args['svr'])) {
+            if (args['svr'].responseXML && (t = args['svr'].responseXML.getElementsByTagName('value'))) {
+                args['value'] = [t[0].firstChild.nodeValue]
+            }
+        }
+
         if (v = Milk.getArg(args, 'value')) {
             this.n.value = v
         }
@@ -949,7 +988,7 @@
     Milk.Ctrl.TextBox.prototype = new Milk.Ctrl.Form()
 
     Milk.Ctrl.TextBox.prototype.init = function () {
-        this.n = $(this.id).firstChild
+        this.n = _$(this.id).firstChild
 
         var c = this
         FLQ.e.add(this.n, 'keypress', function (e) { c.keypress(e) })
@@ -975,7 +1014,7 @@
     Milk.Ctrl.PasswordBox.prototype = new Milk.Ctrl.TextBox()
 
     Milk.Ctrl.PasswordBox.prototype.init = function () {
-        this.n = $(this.id).firstChild
+        this.n = _$(this.id).firstChild
 
         var c = this
         FLQ.e.add(this.n, 'keypress', function (e) { c.keypress(e) })
@@ -994,7 +1033,7 @@
     Milk.Ctrl.ListBox.prototype = new Milk.Ctrl.Form()
 
     Milk.Ctrl.ListBox.prototype.init = function () {
-        this.n = $(this.id).firstChild
+        this.n = _$(this.id).firstChild
         this.addE()
     }
 
@@ -1011,7 +1050,8 @@
             return v
         } else {
             if (this.n.selectedIndex != -1 && this.n.options[this.n.selectedIndex]) {
-                return this.n.options[this.n.selectedIndex].value
+                v = this.n.options[this.n.selectedIndex].value
+                return (v.length == 0 ? null : v)
             } else {
                 return null
             }
@@ -1029,10 +1069,10 @@
     Milk.Ctrl.BoolBox.prototype = new Milk.Ctrl.Form()
 
     Milk.Ctrl.BoolBox.prototype.init = function () {
-        this.n = $(this.id).firstChild
+        this.n = _$(this.id).firstChild
 
         var c = this
-        FLQ.e.add(this.n, 'change', function () { c.sendSignal('change', {'value':c.getValue()}) })
+        FLQ.e.add(this.n, 'change', function () { c.sendSignal('change', {'value':c.getValue()}); c.sendSignal(c.n.checked ? 'on' : 'off') })
     }
 
     Milk.Ctrl.BoolBox.prototype.getValue = function () {
@@ -1043,11 +1083,21 @@
         var v = (Milk.getArg(args, 'value') ? true : false)
         this.n.checked = v
         this.value = v
+        
+        this.sendSignal(this.n.checked ? 'on' : 'off')
     }
 
     Milk.Ctrl.BoolBox.prototype.toggle = function () {
         this.setvalue({'value':(this.getValue() ? false : true)})
         this.sendSignal('slotdone');
+    }
+    
+    Milk.Ctrl.BoolBox.prototype.on = function () {
+        this.setvalue({'value':true})
+    }
+
+    Milk.Ctrl.BoolBox.prototype.off = function () {
+        this.setvalue({'value':false})
     }
 
     /**
@@ -1061,7 +1111,7 @@
     Milk.Ctrl.ChooseBox.prototype = new Milk.Ctrl.Form()
 
     Milk.Ctrl.ChooseBox.prototype.init = function () {
-        this.n = $(this.id).firstChild
+        this.n = _$(this.id).firstChild
 
         var c = this
         if (this.n.nextSibling) FLQ.e.add(this.n.nextSibling, 'click', function () { c.sendSignal('choose', {'send':false}) })
@@ -1072,6 +1122,7 @@
         if (v = Milk.getArg(args, 'value')) {
             this.reqValue = v
             this.n.value = v[1]
+            this.sendSignal('change', {'value':this.getValue()})
         }
     }
 
@@ -1093,7 +1144,7 @@
     Milk.Ctrl.DateBox.prototype = new Milk.Ctrl.Form()
 
     Milk.Ctrl.DateBox.prototype.init = function () {
-        this.p = $(this.id)
+        this.p = _$(this.id)
         this.n = this.p.firstChild
 
         var c = this
@@ -1299,7 +1350,7 @@
     Milk.Ctrl.FileBox.prototype = new Milk.Ctrl.Form()
 
     Milk.Ctrl.FileBox.prototype.init = function () {
-        this.n = $(this.id).firstChild
+        this.n = _$(this.id).firstChild
 
         var c = this
         FLQ.e.add(this.n, 'change', function () { c.changed = true })

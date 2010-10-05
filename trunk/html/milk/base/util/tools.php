@@ -61,7 +61,7 @@
                     $keys = count($args);
                 }
                 for ($i=0; $i < $keys; $i++) {
-                    if (!is_array($arr) || !isset($arr[$args[$i]])) {
+                    if (!is_array($arr) || !array_key_exists($args[$i], $arr)) {
                         return FALSE;
                     } else {
                         $arr = $arr[$args[$i]];
@@ -176,6 +176,25 @@
                 if (range(0, count($arr)-1) !== array_keys($arr)) {
                     return TRUE;
                 }
+            }
+
+            return FALSE;
+        }
+
+        /**
+         * associative_to_object() is used to convert an associative array to an object
+         *
+         * @return object the converted object on success or FALSE on failure
+         * @param array $arr the array to convert to an object
+         */
+        public static function associativeToObject($arr) {
+            if (self::isAssociative($arr) || is_object($arr)) {
+                $obj = new StdClass();
+                foreach ($arr as $key => $val) {
+                    $obj->{$key} = (self::isAssociative($val) ? self::associativeToObject($val) : $val);
+                }
+
+                return $obj;
             }
 
             return FALSE;
@@ -312,5 +331,22 @@
             } else {
                 return finfo_file(finfo_open(FILEINFO_MIME), $filename);
             }
+        }
+
+        public static function csvencode(&$data, $delim=',') {
+            $rowbuffer = '';
+            foreach ($data as $field) {
+                if (is_object($field) || is_array($field)) $field = '';
+                if ($rowbuffer != '') $rowbuffer .= $delim;
+                if ($field == '' || strchr($field, $delim) || strchr($field, '"') || strstr($field, "\n")) {
+                    $field = '"' . str_replace('"', '""', $field) . '"';
+                }
+                $rowbuffer .= $field;
+            }
+
+            return $rowbuffer . "\r\n";
+            // Note: UTF-16LE encoding is required for asian character set support in excel.
+            // However, a BOM (Byte-Order-Mark must also be used at the beginning of the file for this to work
+            // return mb_convert_encoding($rowbuffer . "\r\n", 'UTF-16LE');
         }
     }

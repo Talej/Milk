@@ -187,7 +187,29 @@
             }
             if (px >= 0) n.style.height = px+'px'
         }
-    };
+    }
+    
+    FLQ.getXY = function (n) {
+        var x = 0, y = 0, xn = n, yn = n
+        while (yn && FLQ.isSet(typeof yn.offsetTop)) {
+            y+= yn.offsetTop
+            if (yn.offsetParent) {
+                yn = yn.offsetParent
+            } else {
+                yn = null
+            }
+        }
+        while (xn && FLQ.isSet(typeof xn.offsetLeft)) {
+            x+= xn.offsetLeft
+            if (xn.offsetParent) {
+                xn = xn.offsetParent
+            } else {
+                xn = null
+            }
+        }
+        
+        return {'x':x, 'y':y}
+    }
 
     FLQ.popup = function (url, props) {
         if (arguments.length < 2) props = {}
@@ -754,4 +776,29 @@
 
             svr.send(data)
         }
+    }
+
+    FLQ.ajax.getAttr = function (n, k) {
+        if (FLQ.isObj(n)) {
+            if (FLQ.isFunc(typeof n.getAttribute) && n.getAttribute(k)) {
+                return n.getAttribute(k)
+            } else if (n.attributes) {
+                for (var i=0; n.attributes[i]; i++) {
+                    if (n.attributes[i].nodeName == k) {
+                        return n.attributes[i].nodeValue
+                    }
+                }
+            }
+        }
+
+        return null
     };
+
+    FLQ.ajax.getValue = function (n, f) {
+        var e = n.getElementsByTagName(f)
+        if (e && e[0] && e[0].firstChild) {
+            return e[0].firstChild.nodeValue
+        }
+
+        return null
+    }

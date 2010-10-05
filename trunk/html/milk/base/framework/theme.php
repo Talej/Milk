@@ -91,9 +91,11 @@
                 $this->deliver($v);
                 return $this->get('xhtml');
             } else if ($v instanceof MilkDateTime) {
-                return $v->toString(MilkTools::ifDef('CFG_DATETIME_FORMAT', NULL));
+                return $v->toString(MilkTools::ifNull($this->mod->config->get('DATETIME_FORMAT'), MilkTools::ifDef('CFG_DATETIME_FORMAT', NULL)));
             } else if ($v instanceof MilkDate) {
-                return $v->toString(MilkTools::ifDef('CFG_DATE_FORMAT', NULL));
+                return $v->toString(MilkTools::ifNull($this->mod->config->get('DATE_FORMAT'), MilkTools::ifDef('CFG_DATE_FORMAT', NULL)));
+            } else if (is_object($v) && method_exists($v, 'toString')) {
+                return $v->toString();
             } else {
                 return htmlentities($v, ENT_QUOTES, 'UTF-8');
             }
@@ -185,6 +187,7 @@
 
         public function jsControl($ctrl, $props=NULL) {
             if (!$ctrl->strictConns) $props['strictConns'] = MilkTools::jsEncode(FALSE, JSTYPE_BOOL);
+            if ($ctrl->savegroup)    $props['saveGroup']   = MilkTools::jsEncode($ctrl->savegroup);
 
             $str = 'Milk.add(' . MilkTools::jsEncode($ctrl->name) . ', '
                  . MilkTools::jsEncode($this->getID($ctrl, '')) . ', '

@@ -16,6 +16,7 @@
     define('DD_TYPE_EMAIL',     ++$i);
     define('DD_TYPE_CHOOSER',   ++$i);
     define('DD_TYPE_FILE',      ++$i);
+    define('DD_TYPE_CUSTOM',    ++$i);
 
     define('DD_ATTR_TYPE',           'type');
     define('DD_ATTR_REQUIRED',   'required');
@@ -30,10 +31,10 @@
     define('DD_ATTR_DEFAULT',     'default');
     define('DD_ATTR_READONLY',   'readonly');
     define('DD_ATTR_DEF',              'dd');
-    define('DD_ATTR_CURRENCY',   'currency');
     define('DD_ATTR_FILETYPE',   'filetype');
     define('DD_ATTR_EXTENSIONS',     'exts');
     define('DD_ATTR_PREFIX',       'prefix');
+    define('DD_ATTR_CLASS',         'class');
 
     class dataDef {
         public $module;
@@ -85,6 +86,7 @@
                             $attribs[DD_ATTR_REGEX] = '^([A-z0-9._%+-]+@[A-z0-9.-]+\.[A-z]{2,6})?$';
                             $attribs[DD_ATTR_TYPE]  = 'text';
                             $attribs[DD_ATTR_MAX]   = 255;
+                            $attribs[DD_TYPE_EMAIL] = TRUE;
                             break;
 
                         case DD_TYPE_BOOL:
@@ -94,9 +96,9 @@
                         case DD_TYPE_NUMBER:
                             if (!isset($attribs[DD_ATTR_REGEX]) || strlen($attribs[DD_ATTR_REGEX]) == 0) {
                                 if (($path = MilkTools::getAssociativeKeypath($args, DD_ATTR_PREFIX)) && ($prefix = MilkTools::findArrayValue($args, $path))) {
-                                    $attribs[DD_ATTR_REGEX] = '^' . preg_quote($prefix) . '?[0-9]*$';
+                                    $attribs[DD_ATTR_REGEX] = '^' . preg_quote($prefix) . '?[0-9,]*(\.[0-9]{2})?$';
                                 } else {
-                                    $attribs[DD_ATTR_REGEX] = '^[0-9]*$';
+                                    $attribs[DD_ATTR_REGEX] = '^[0-9,]*(\.[0-9]{2})?$';
                                 }
                             }
                             $attribs[DD_ATTR_TYPE] = 'number';
@@ -128,6 +130,10 @@
 
                         case DD_TYPE_FILE:
                             $attribs[DD_ATTR_TYPE] = 'file';
+                            break;
+                            
+                        case DD_TYPE_CUSTOM:
+                            $attribs[DD_ATTR_TYPE] = 'custom';
                             break;
 
                         case DD_ATTR_MULTILINE:
@@ -238,7 +244,7 @@
 
         public function savesubset($subset, $pk=NULL, $pkmap=NULL) {
             if ($pk === NULL) $pk = $this->getPk();
-            if ($this->isValidPk() && $this->getAttrib($subset, DD_ATTR_TYPE) == 'datadef' && ($sds = $this->getAttrib($subset, DD_ATTR_DEF))) {
+            if ($this->isValidPk($pk) && $this->getAttrib($subset, DD_ATTR_TYPE) == 'datadef' && ($sds = $this->getAttrib($subset, DD_ATTR_DEF))) {
                 if (strlen($sds->table) == 0) trigger_error('dataDef::savesubset() - Can not save data without a table name', E_USER_ERROR);
                 if (isset($this->subsavedata[$subset]) && is_array($this->subsavedata[$subset])) {
                     $newpk = array();
@@ -368,4 +374,21 @@
 
             return TRUE;
         }
+    }
+    
+    /**
+     * Interface for custom DD types
+     */
+    interface dataDef_CustomType {
+        public function set($value);
+        
+        public function toString();
+        
+        public function toDBString();
+        
+        public function fromDBString($value);
+        
+        public function validate();
+        
+        public function isValid();
     }

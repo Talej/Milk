@@ -50,7 +50,7 @@
         if (typeof e == 'undefined') {
             e = window.event
         }
-        var xy = [e.screenX, e.screenY]
+        var xy = [e.pageX, e.pageY]
         return xy
     }
 

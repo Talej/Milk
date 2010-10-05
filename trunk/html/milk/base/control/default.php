@@ -164,10 +164,22 @@
             $cb = array($this, 'add');
             return call_user_func_array($cb, $args);
         }
+
+        public function setSaveGroup() {
+            if (!empty($this->controls)) {
+                foreach ($this->controls as $key => $row) {
+                    foreach ($row as $k => $ctrl) {
+                        $ctrl->savegroup = $this->savegroup;
+                        $ctrl->setSaveGroup();
+                    }
+                }
+            }
+        }
     }
 
     class Tabs_MilkControl extends MilkControl {
         public $signals  = array('showtab');
+        public $slots    = array('resize');
         public $tabs     = array();
         public $tab      = 0;
         public $disabled = array();
@@ -209,8 +221,8 @@
         protected $props    = array();
         protected $cols     = array();
 
-        public function __construct($parent) {
-            parent::__construct($parent);
+        public function __construct($parent, $name=NULL) {
+            parent::__construct($parent, $name);
             if (isset($this->request['offset'])) $this->offset = $this->request['offset'];
             if (isset($this->request['sortCol'])) $this->sortCol = $this->request['sortCol'];
             if (isset($this->request['sortDesc'])) $this->sortDesc = $this->request['sortDesc'];
@@ -258,7 +270,7 @@
                 }
             }
             $this->cols = $args;
-            $this->numcols = max($this->numcols, count($this->cols));
+            $this->numcols = count($this->cols);
         }
 
         public function sort($col, $desc=FALSE) {
@@ -314,6 +326,13 @@
                                 $tmp = $row->{$meta['name']};
                                 $row->{$meta['name']} = new MilkTime();
                                 $row->{$meta['name']}->fromDBString($tmp);
+                            }
+                            break;
+                            
+                        case 'NEWDECIMAL': // TODO: Should there be any other types here??
+                            $dd = $this->module->getDD();
+                            if ($dd->fieldExists($meta['name']) && ($attr = $dd->getAttrib($meta['name'], DD_ATTR_PREFIX))) {
+                                $row->{$meta['name']} = $attr . $row->{$meta['name']};
                             }
                             break;
                     }
@@ -508,8 +527,8 @@
     }
 
     class BoolBox_MilkControl extends Form_MilkControl {
-        public $signals = array('change', 'slotdone');
-        public $slots = array('setvalue', 'toggle');
+        public $signals = array('change', 'slotdone', 'on', 'off');
+        public $slots = array('setvalue', 'toggle', 'on', 'off');
     }
 
     class ChooseBox_MilkControl extends Form_MilkControl {
@@ -546,6 +565,14 @@
         }
 
         public function entitise($str) {
+            if ($str instanceof MilkDateTime) {
+                $str = $str->toString(MilkTools::ifDef('CFG_DATETIME_FORMAT', NULL));
+            } else if ($str instanceof MilkDate) {
+                $str = $str->toString(MilkTools::ifDef('CFG_DATE_FORMAT', NULL));
+            } else if (is_object($str) && method_exists($str, 'toString')) {
+                $str = $str->toString();
+            }
+
             $str = str_replace(array('&', '"', "'", '<', '>'), array('&amp;', '&quot;', '&apos;', '&lt;', '&gt;'), (string)$str);
             return $this->stripControlChars($str);
         }

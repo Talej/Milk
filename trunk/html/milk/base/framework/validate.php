@@ -6,8 +6,8 @@
 
     class MilkValidate {
         public $savedata = array();
-
         protected $errors = array();
+        protected $db;
 
         public function setError($str) {
             $this->errors[] = $str;
@@ -57,6 +57,7 @@
                 case 'chooser':  $func = 'chooser';    break;
                 case 'password': $func = 'password';   break;
                 case 'file':     $func = 'file';       break;
+                case 'custom':   $func = 'custom';     break;
 
                 default:
                     trigger_error('MilkValidate::validate() - Unable to find validation method for ' . $field, E_USER_ERROR);
@@ -68,6 +69,7 @@
 
         public function validate($dd, $request=NULL) {
             if ($request === NULL) $request =& $dd->module->request;
+            if ($dd->module->db) $this->db = $dd->module->db;
             $v = new MilkValidate();
             if ($dd instanceof DataDef && is_array($dd->fields)) {
                 foreach ($dd->fields as $field => $props) {
@@ -126,7 +128,7 @@
         }
 
         public function id($val, $key, $props) {
-            if (!MilkTools::isId($val) && (!self::getProp($props, 'pk', FALSE) || $val != '\N')) {
+            if (!MilkTools::isId($val) && (self::getProp($props, 'pk', FALSE) || !self::isNull($val))) {
                 self::setError(sprintf('%s is not a valid id value', MilkTools::ifNull(self::getProp($props, 'label'), self::createLabel($key))));
                 return FALSE;
             }
@@ -154,7 +156,7 @@
                 return FALSE;
             }
             if (self::getProp($props, 'regex', FALSE) && !preg_match('/' . self::getProp($props, 'regex') . '/', $val)) {
-                self::setError(sprintf('%s does not match the specified pattern: %s', MilkTools::ifNull(self::getProp($props, 'label'), self::createLabel($key)), self::getProp($props, 'regex')));
+                self::setError(sprintf('Please enter a valid %s', MilkTools::ifNull(self::getProp($props, 'label'), self::createLabel($key))));
                 return FALSE;
             }
 
@@ -169,9 +171,10 @@
         }
 
         public function stripprefix($val, $props) {
-            if (array_key_exists(DD_ATTR_CURRENCY, $props)) {
-                if (substr($val, 0, 1) == $props[DD_ATTR_CURRENCY]) {
-                    $val = substr($val, 1);
+            if (array_key_exists(DD_ATTR_PREFIX, $props)) {
+                $l = strlen($props[DD_ATTR_PREFIX]);
+                if (substr($val, 0, $l) == $props[DD_ATTR_PREFIX]) {
+                    $val = substr($val, $l);
                 }
             }
             return $val;
@@ -179,6 +182,8 @@
 
         public function number($val, $key, $props) {
             $val = self::stripprefix($val, $props);
+            // replace any commas
+            $val = str_replace(',', '', $val);
 
             if (!is_numeric($val) && strlen($val) > 0) {
                 self::setError(sprintf('%s is not a valid number', MilkTools::ifNull(self::getProp($props, 'label'), self::createLabel($key))));
@@ -197,7 +202,7 @@
                 return FALSE;
             }
             if (self::getProp($props, 'regex', FALSE) && !preg_match('/' . self::getProp($props, 'regex') . '/', $val)) {
-                self::setError(sprintf('%s does not match the specified pattern: %s', MilkTools::ifNull(self::getProp($props, 'label'), self::createLabel($key)), self::getProp($props, 'regex')));
+                self::setError(sprintf('Please enter a valid %s', MilkTools::ifNull(self::getProp($props, 'label'), self::createLabel($key))));
                 return FALSE;
             }
 
@@ -380,5 +385,31 @@
             self::save($key, $val);
 // 
             return TRUE;
+        }
+        
+        public function custom($val, $key, $props) {
+            if (!$val instanceof datadef_CustomType) {
+                $class = self::getProp($props, 'class');
+                $tmp = $val;
+                $val = new $class($this->db);
+                $val->label = MilkTools::ifNull(self::getProp($props, 'label'), self::createLabel($key));
+                $val->set($tmp);
+            }
+
+            if ($val instanceof datadef_CustomType) {
+                if ($val->isValid()) {
+                    self::save($key, $val);
+                    
+                    return TRUE;
+                } else {
+                    if ($errors = $val->validate()) {
+                        foreach ($errors as $error) {
+                            self::setError($error);
+                        }
+                    }
+                }
+            }
+            
+            return FALSE;
         }
     }
