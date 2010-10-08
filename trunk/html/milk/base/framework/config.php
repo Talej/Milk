@@ -19,7 +19,8 @@
         
         public function define() {
             foreach ($this->settings as $key => $val) {
-                define('CFG_' . strtoupper($key), $val);
+                $define = 'CFG_' . strtoupper($key);
+                if (!defined($define)) define($define, $val);
             }
         }
     }
