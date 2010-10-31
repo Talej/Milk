@@ -240,9 +240,11 @@
                     file_exists($file . '.gz')
                 ) {
                     header("Content-Encoding: gzip");
+                    if ($size = filesize($file . '.gz')) header('Content-Length: ' . $size);
                     print file_get_contents($file . '.gz');
                     return TRUE;
                 } else {
+                    if ($size = filesize($file)) header('Content-Length: ' . $size);
                     print file_get_contents($file);
                     return TRUE;
                 }

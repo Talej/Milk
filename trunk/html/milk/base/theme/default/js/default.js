@@ -518,13 +518,7 @@
         this.n  = null
     }
 
-    Milk.Ctrl.Label.prototype = new MilkCtrl()
-
-    Milk.Ctrl.Label.prototype.init = function () {
-        this.n = _$(this.id)
-        var c = this
-        FLQ.e.add(this.n, 'click', function (e) { c.sendSignal('click'); FLQ.e.stopEvent(e) })
-    }
+    Milk.Ctrl.Label.prototype = new Milk.Ctrl.Text()
 
     /**
      * Heading control
@@ -534,13 +528,7 @@
         this.n  = null
     }
 
-    Milk.Ctrl.Heading.prototype = new MilkCtrl()
-
-    Milk.Ctrl.Heading.prototype.init = function () {
-        this.n = _$(this.id)
-        var c = this
-        FLQ.e.add(this.n, 'click', function (e) { c.sendSignal('click'); FLQ.e.stopEvent(e) })
-    }
+    Milk.Ctrl.Heading.prototype = new Milk.Ctrl.Text()
 
     /**
      * Image control
@@ -611,16 +599,10 @@
      */
     Milk.Ctrl.Box = function (id) {
         this.id = id
+        this.n  = null
     }
 
-    Milk.Ctrl.Box.prototype = new MilkCtrl()
-
-    Milk.Ctrl.Box.prototype.init = function () {
-        this.n = _$(this.id)
-        
-        var c = this
-        FLQ.e.add(this.n, 'click', function () { c.sendSignal('click') })
-    }
+    Milk.Ctrl.Box.prototype = new Milk.Ctrl.Text()
 
     /**
      * VerticalBox control
