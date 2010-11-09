@@ -123,7 +123,9 @@
         public function __construct($parent, $title=NULL, $file=NULL) {
             parent::__construct($parent);
             $this->title = $title;
-            $this->file  = MilkTools::ifNull($file, MilkLauncher::mkPath(MILK_APP_DIR, 'template', 'default.php'));
+            $this->file  = MilkTools::ifNull($file, MilkTools::mkPath(MILK_APP_DIR, 'template', 'default.php'));
+            $templatecss = '/css/style.css';
+            if (file_exists(MilkTools::mkPath(MILK_PATH, $templatecss))) $this->addCSS($templatecss);
         }
 
         public function addCSS($file) {
@@ -509,16 +511,21 @@
     }
 
     class ListBox_MilkControl extends Form_MilkControl {
-        public $signals = array('change', 'slotdone');
+        public $signals = array('change', 'slotdone', 'filterset');
+        public $slots   = array('setvalue', 'focus', 'filter');
         public $options = array();
         public $minsel;
         public $maxsel;
+        public $filters = array();
+        public $filterKey;
 
         public function __construct($parent, $name, $value=NULL, $attrs=NULL) {
             parent::__construct($parent, $name, $value, $attrs);
-            $this->options = $this->getAttrib('options');
-            $this->minsel = $this->getAttrib('min');
-            $this->maxsel = $this->getAttrib('max', 1);
+            $this->options   = $this->getAttrib('options');
+            $this->minsel    = $this->getAttrib('min');
+            $this->maxsel    = $this->getAttrib('max', 1);
+            $this->filters   = $this->getAttrib('filters');
+            $this->filterKey = $name;
 
             if (!is_array($this->options)) {
                 trigger_error('ListBox::__construct() - An options array must be specified in a data structure or attributes argument', E_USER_ERROR);

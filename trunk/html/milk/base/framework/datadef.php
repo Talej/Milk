@@ -14,6 +14,7 @@
     define('DD_TYPE_TIME',      ++$i);
     define('DD_TYPE_DEF',       ++$i);
     define('DD_TYPE_EMAIL',     ++$i);
+    define('DD_TYPE_PHONE',     ++$i);
     define('DD_TYPE_CHOOSER',   ++$i);
     define('DD_TYPE_FILE',      ++$i);
     define('DD_TYPE_CUSTOM',    ++$i);
@@ -87,6 +88,12 @@
                             $attribs[DD_ATTR_TYPE]  = 'text';
                             $attribs[DD_ATTR_MAX]   = 255;
                             $attribs[DD_TYPE_EMAIL] = TRUE;
+                            break;
+                            
+                        case DD_TYPE_PHONE:
+                            $attribs[DD_ATTR_TYPE]  = 'text';
+                            $attribs[DD_ATTR_MAX]   = 255;
+                            $attribs[DD_TYPE_PHONE] = TRUE;
                             break;
 
                         case DD_TYPE_BOOL:

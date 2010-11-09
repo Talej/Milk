@@ -532,6 +532,10 @@
             $str = '<div id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '">';
             if ($ctrl->getAttrib(DD_ATTR_MULTILINE)) {
                 $str.= FLQForm::textarea($this->getID($ctrl, ''), $props, $ctrl->reqValue);
+            } else if ($ctrl->getAttrib(DD_TYPE_EMAIL)) {
+                $str.= FLQForm::emailbox($this->getID($ctrl, ''), $props, $ctrl->reqValue);
+            } else if ($ctrl->getAttrib(DD_TYPE_PHONE)) {
+                $str.= FLQForm::phonebox($this->getID($ctrl, ''), $props, $ctrl->reqValue);
             } else {
                 $str.= FLQForm::textbox($this->getID($ctrl, ''), $props, $ctrl->reqValue);
             }
@@ -568,6 +572,9 @@
                 'min'      => MilkTools::jsEncode($ctrl->minsel),
                 'max'      => MilkTools::jsEncode($ctrl->maxsel)
             );
+
+            if (is_array($ctrl->filters))  $jsprops['filters'] = MilkTools::jsEncode($ctrl->filters, JSTYPE_HASH);
+            if ($ctrl->filterKey != NULL) $jsprops['filterKey'] = MilkTools::jsEncode($ctrl->filterKey, JSTYPE_STRING);
 
             $this->jsControl($ctrl, $jsprops);
 

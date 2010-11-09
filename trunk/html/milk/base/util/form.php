@@ -9,6 +9,8 @@
     define('FLQFORM_SUBMIT', 'submit');
     define('FLQFORM_FILE', 'file');
     define('FLQFORM_HIDDEN', 'hidden');
+    define('FLQFORM_EMAIL', 'email');
+    define('FLQFORM_PHONE', 'phone');
 
     class FLQForm {
 
@@ -128,6 +130,30 @@
          */
         public static function textbox($name, $attribs=array(), $value=NULL) {
             return self::input(FLQFORM_TEXT, $name, $attribs, $value);
+        }
+
+        /**
+         * emailbox is a wrapper for input and generates a textbox field
+         *
+         * @return string the emailbox field
+         * @param string $name the name of the field
+         * @param mixed $attribs either a string or an array of attributes for the field
+         * @param string $value the default value of the field
+         */
+        public static function emailbox($name, $attribs=array(), $value=NULL) {
+            return self::input(FLQFORM_EMAIL, $name, $attribs, $value);
+        }
+        
+        /**
+         * phonebox is a wrapper for input and generates a textbox field
+         *
+         * @return string the phonebox field
+         * @param string $name the name of the field
+         * @param mixed $attribs either a string or an array of attributes for the field
+         * @param string $value the default value of the field
+         */
+        public static function phonebox($name, $attribs=array(), $value=NULL) {
+            return self::input(FLQFORM_PHONE, $name, $attribs, $value);
         }
 
         /**

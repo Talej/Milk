@@ -38,6 +38,24 @@
             return $default;
         }
 
+        static public function ifNot() {
+            $args = func_get_args();
+            foreach ($args as $arg) {
+                if ($arg !== FALSE && $arg !== NULL) return $arg;
+            }
+
+            return FALSE;
+        }
+
+        static public function ifEmpty() {
+            $args = func_get_args();
+            foreach ($args as $arg) {
+                if ($arg != NULL && trim($arg) != '') return $arg;
+            }
+
+            return FALSE;
+        }
+
         static public function mkPath($file) {
             return MilkLauncher::mkPath(func_get_args());
         }
@@ -349,4 +367,8 @@
             // However, a BOM (Byte-Order-Mark must also be used at the beginning of the file for this to work
             // return mb_convert_encoding($rowbuffer . "\r\n", 'UTF-16LE');
         }
+    }
+
+    function flqentities($value) {
+        return htmlentities((string)$value, ENT_QUOTES, 'UTF-8');
     }

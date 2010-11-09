@@ -245,7 +245,7 @@
                 $module                = new $classname();
                 $module->config        = $this->config;
                 $module->theme         =& $this->theme;
-                $module->db            = $this->db;
+                if (isset($this->db))  $module->db = $this->db;
                 $module->history       =& $this->history;
                 $module->errors        =& $this->errors;
                 $module->warnings      =& $this->warnings;
