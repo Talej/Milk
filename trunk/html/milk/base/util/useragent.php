@@ -146,6 +146,8 @@
             // TODO: Match an array of other device types
             if (preg_match('/iphone/i', $this->agentstr)) {
                 $parts['device'] = 'iPhone';
+            } else if (preg_match('/android/i', $this->agentstr)) {
+                $parts['device'] = 'Android';
             }
 
             return $parts;
@@ -247,10 +249,20 @@
             if ($osver !== NULL && !version_compare($this->osver, $osver, $verop)) {
                 return FALSE;
             }
-            if ($arch !== NULL && strtolower($arch) != strtolower($arch)) {
+            if ($arch !== NULL && strtolower($arch) != strtolower($this->arch)) {
                 return FALSE;
             }
 
             return TRUE;
+        }
+        
+        public function isDevice($dev=NULL) {
+            if (strtolower($dev) == strtolower($this->device)) {
+                return TRUE;
+            } else if ($dev == NULL && $this->device != NULL) {
+                return TRUE;
+            }
+            
+            return FALSE;
         }
     }
