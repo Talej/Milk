@@ -272,8 +272,8 @@
          * @access public
          * @return void
          */
-        public function back() {
-            $this->go(2);
+        public function back($step=2) {
+            $this->go($step);
         }
 
         /**
