@@ -268,6 +268,9 @@
                 $ctrl->flex = NULL;
                 $style.= 'width:' . $ctrl->width . 'px;';
             }
+            if ($ctrl->height > 0) {
+                $style.= 'height:' . $ctrl->height . 'px;';
+            }
             if ($style != '') $style = ' style="' . $style . '"';
 
             $this->deliverChildren($ctrl);
@@ -589,7 +592,7 @@
             $options = $options+$ctrl->options;
 
             $class = 'listbox';
-            if ($ctrl->minsel > 1 || $ctrl->maxsel > 1) $class.= ' listbox-multiple';
+            if ($ctrl->minsel > 1 || $ctrl->maxsel > 1 || $ctrl->maxsel == NULL) $class.= ' listbox-multiple';
             if ($ctrl->getAttrib(DD_ATTR_REQUIRED)) $class.= ' listbox-required';
 
             $str = '<div id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '">'

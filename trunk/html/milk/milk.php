@@ -296,3 +296,14 @@
             header($_SERVER['SERVER_PROTOCOL'] . ' ' . $status  . ' ' . $desc);
         }
     }
+
+    function flq_dump($v, $exit=FALSE, $ip=NULL) {
+        if ($ip == NULL || $ip == $_SERVER['REMOTE_HOST']) {
+            print '<pre>';
+            var_dump($v);
+            print '</pre>';
+        }
+
+        if ($exit) exit;
+    }
+

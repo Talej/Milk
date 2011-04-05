@@ -81,6 +81,7 @@
         public $flex = 1;
         public $cssclass;
         public $width;
+        public $height;
         public $signals = array('click');
     }
 

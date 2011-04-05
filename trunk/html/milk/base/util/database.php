@@ -81,6 +81,9 @@
             // Undo the bin2hex()
             $password = pack('H*', $this->pass);
 
+            // Bump up the max buffer size to allow loading of large media (15M)
+            if (strtolower($this->type) == 'mysql') $options[PDO::MYSQL_ATTR_MAX_BUFFER_SIZE] = 1024*1024*15;
+
             $result = parent::__construct($this->getDSN(), $this->user, $password ^ php_uname(), $options);
 
             // Turn on buffering for MySQL to allow getnext to work
