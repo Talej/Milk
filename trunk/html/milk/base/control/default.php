@@ -55,7 +55,7 @@
 
     class Spacer_MilkControl extends MilkControl {
         public $flex = 1;
-        public $width;
+        protected $width;
         public $height;
 
         public function __construct($parent, $flex=1) {
@@ -63,11 +63,15 @@
             $this->flex = $flex;
         }
 
-        public function deliver($theme) {
-            if ($this->width > 0 || $this->height > 0) {
+        public function __set($name, $value) {
+            if ($name == 'width') {
+                $this->width = $value;
                 $this->flex = NULL;
             }
-            parent::deliver($theme);
+        }
+
+        public function __get($name) {
+            if ($name == 'width') return $this->width;
         }
     }
 

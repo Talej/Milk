@@ -303,10 +303,9 @@
         public function __construct() {
             parent::__construct();
 
-            // TODO: Add checking here
             if (isset($GLOBALS['db'])) {
                 $this->db = $GLOBALS['db'];
-            } else {
+            } else if (defined('CFG_DATABASE_NAME')) {
                 MilkLauncher::load(MILK_BASE_DIR, 'util', 'database.php');
                 $this->db = new Database();
             }

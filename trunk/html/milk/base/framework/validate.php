@@ -220,8 +220,8 @@
         }
 
         public function optionlist($val, $key, $props) {
-            if (!is_array($val) && $val !== NULL) $val = (array)$val;
-            if (self::getProp($props, 'required', FALSE) && $val === NULL) {
+            if (!is_array($val) && !self::isNull($val)) $val = (array)$val;
+            if (self::getProp($props, 'required', FALSE) && self::isNull($val)) {
                 self::setError(sprintf('%s is required', MilkTools::ifNull(self::getProp($props, 'label'), self::createLabel($key))));
                 return FALSE;
             }
@@ -233,6 +233,7 @@
                 self::setError(sprintf('%s must have no more than %d options selected', MilkTools::ifNull(self::getProp($props, 'label'), self::createLabel($key)), self::getProp($props, 'max', 0)));
                 return FALSE;
             }
+
             if (self::getProp($props, 'options', FALSE)) {
                 if (is_array($val)) {
                     foreach ($val as $v) {
@@ -302,16 +303,18 @@
         }
 
         public function chooser($val, $key, $props) {
-            if ((!is_array($val) || count($val) < 2) && $val !== NULL) {
+            if ((!is_array($val) || count($val) < 2) && !self::isNull($val)) {
                 self::setError(sprintf('%s is not a valid chooser value', MilkTools::ifNull(self::getProp($props, 'label'), self::createLabel($key))));
                 return FALSE;
             }
-            if (self::getProp($props, 'required', FALSE) && $val === NULL) {
+            if (self::getProp($props, 'required', FALSE) && self::isNull($val)) {
                 self::setError(sprintf('%s is required', MilkTools::ifNull(self::getProp($props, 'label'), self::createLabel($key))));
                 return FALSE;
             }
 
-            self::save($key, $val[0]);
+            $val = (self::isNull($val) ? NULL : $val[0]);
+
+            self::save($key, $val);
 
             return TRUE;
         }
