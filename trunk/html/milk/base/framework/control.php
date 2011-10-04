@@ -147,6 +147,10 @@
             if ($target instanceof MilkControl) $target->slotConnections[] = $conn;
         }
 
+        public function link($signal, $url, $target=MILK_SLOT_SAMEWIN) {
+            $this->connect($signal, $target, 'act_index', array('modurl' => $url, 'nohistory' => TRUE));
+        }
+
         public function hasSignal($signal) {
             return (in_array($signal, $this->signals) || !$this->strictConns ? TRUE : FALSE);
         }

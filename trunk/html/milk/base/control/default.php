@@ -136,6 +136,10 @@
         public function addCSS($file) {
             $this->css[] = $file;
         }
+
+        public function setFile($name) {
+            $this->file = MilkTools::mkPath(MILK_APP_DIR, 'template', $name);
+        }
     }
 
     class Table_MilkControl extends MilkControl {

@@ -54,14 +54,14 @@ if [ $domap = "y" ]; then
         exit;
     } else if (preg_match('/\/flq(img|media)\/[0-9]+/', \$_SERVER['PHP_SELF'])) {
         \$milk = new MilkLauncher('Media'); // Note - to use this the media module will be required
-    } else if (preg_match('/\/(.+)\.html/', \$_SERVER['PHP_SELF'], \$m)) {
+    } else if (preg_match('/\/(.+)\/.+\.html/', \$_SERVER['PHP_SELF'], \$m)) {
         \$module = preg_replace('/[^A-z0-9]+/', '', \$m[1]);
         if (MilkLauncher::moduleExists(\$module)) {
             \$milk = new MilkLauncher(\$module);
             \$milk->addControlSet('$theme');
             \$milk->module->theme = '$theme';
         }
-    } else if (preg_match('/\/(.+)\/.+\.html/', \$_SERVER['PHP_SELF'], \$m)) {
+    } else if (preg_match('/\/(.+)\.html/', \$_SERVER['PHP_SELF'], \$m)) {
         \$module = preg_replace('/[^A-z0-9]+/', '', \$m[1]);
         if (MilkLauncher::moduleExists(\$module)) {
             \$milk = new MilkLauncher(\$module);

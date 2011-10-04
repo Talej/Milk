@@ -800,7 +800,7 @@
 
     Milk.Ctrl.DataGrid.prototype.focus = function (r, e) {
         if (r < 0) return false
-        if (e.ctrlKey) {
+        if (e.ctrlKey || e.metaKey) {
             var i
             if ((i = this.f.search(r)) != -1) { // it's selected so deselect
                 FLQ.removeClass(this.b.rows[r], 'datagrid-focus')

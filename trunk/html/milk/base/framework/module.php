@@ -363,14 +363,15 @@
                             break;
                             
                         case 'number':
-                            switch ($this->config->get('NUMBER_FORMAT')) {
-                                case 0: $record->{$key} = number_format($record->{$key}, 0, '.', ''); break;
-                                case 1: $record->{$key} = number_format($record->{$key}, 2, '.', ''); break;
-                                case 2: $record->{$key} = number_format($record->{$key}, 2, '.', ','); break;
-                                case 3: $record->{$key} = number_format($record->{$key}, 0, '.', ','); break;
-                            }
                             if ($attr = $dd->getAttrib($key, DD_ATTR_PREFIX)) {
-                                $record->{$key} = $attr . $record->{$key};
+                                $record->{$key} = $attr . number_format($record->{$key}, 2, '.', ',');
+                            } else {
+                                switch ($this->config->get('NUMBER_FORMAT')) {
+                                    case 0: $record->{$key} = number_format($record->{$key}, 0, '.', ''); break;
+                                    case 1: $record->{$key} = number_format($record->{$key}, 2, '.', ''); break;
+                                    case 2: $record->{$key} = number_format($record->{$key}, 2, '.', ','); break;
+                                    case 3: $record->{$key} = number_format($record->{$key}, 0, '.', ','); break;
+                                }
                             }
                             break;
                             

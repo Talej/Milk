@@ -40,7 +40,7 @@
                 'args'     => NULL,
                 'anchor'   => NULL
             );
-            if ($tmp = parse_url($url)) {
+            if ($tmp = @parse_url($url)) {
                 $req = self::fromRequest();
                 $parts['protocol'] = (isset($tmp['protocol']) ? $tmp['protocol'] : $req->protocol);
                 $parts['host']     = (isset($tmp['host']) ? $tmp['host'] : $req->host);

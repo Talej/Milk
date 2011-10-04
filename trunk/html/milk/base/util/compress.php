@@ -4,8 +4,6 @@
      * This library provides caching, compression (minification and gzip encoding)
      * and concatination functionality for javascript and css files
      *
-     * $Id$
-     *
      * @package core
      * @author Michael Little <michael@fliquidstudios.com>
      * @version 1.0
@@ -14,7 +12,7 @@
     define('FLQCOMPRESS_TYPE_JS',   'js');
     define('FLQCOMPRESS_TYPE_CSS', 'css');
 
-    define('FLQCOMPRESS_CACHEDIR', MilkTools::mkPath(MILK_APP_DIR, 'cache'));
+    define('FLQCOMPRESS_CACHEDIR', MilkTools::mkPath(MILK_APP_DIR, 'cache', 'cssjs'));
 
     /**
      * The FLQCompress class compresses, concatinates and caches Javascript and CSS
@@ -37,6 +35,8 @@
          * @param mixed $files an array or string of files
          */
         function __construct($type, $files=NULL) {
+            if (!file_exists(FLQCOMPRESS_CACHEDIR)) mkdir(FLQCOMPRESS_CACHEDIR);
+
             $this->type = $type;
             if (is_array($files)) {
                 $this->files = $files;
@@ -66,7 +66,15 @@
          * @return string the hash string generated
          */
         protected function getHash() {
-            return md5(implode('', $this->files));
+            $str = '';
+            foreach ($this->files as $file) {
+                $webfile = MilkTools::mkPath(MILK_PATH, $file);
+                if (file_exists($webfile) && is_readable($webfile)) {
+                    $str.= md5_file($webfile);
+                }
+            }
+
+            return md5($str);
         }
 
         /**

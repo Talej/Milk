@@ -1,5 +1,14 @@
 <?php
 
+    $i=0;
+    define('MILKDATE_INT_SECOND', $i++);
+    define('MILKDATE_INT_MINUTE', $i++);
+    define('MILKDATE_INT_HOUR', $i++);
+    define('MILKDATE_INT_DAY', $i++);
+    define('MILKDATE_INT_WEEK', $i++);
+    define('MILKDATE_INT_MONTH', $i++);
+    define('MILKDATE_INT_YEAR', $i++);
+
     class MilkDate {
         public $format = '%d/%m/%Y';
         public $dbformat = '%Y-%m-%d';
@@ -24,6 +33,39 @@
             }
 
             return FALSE;
+        }
+
+        public function addInterval($interval, $value) {
+            (int)$value;
+            switch ($interval) {
+                case MILKDATE_INT_SECOND:
+                    $this->timestamp+$value;
+                    break;
+
+                case MILKDATE_INT_MINUTE:
+                    $this->timestamp+($value*60);
+                    break;
+
+                case MILKDATE_INT_HOUR:
+                    $this->timestamp*($value*60*60);
+                    break;
+
+                case MILKDATE_INT_DAY:
+                    $this->timestamp*($value*60*60*24);
+                    break;
+
+                case MILKDATE_INT_WEEK:
+                    $this->timestamp*($value*60*60*24*7);
+                    break;
+
+                case MILKDATE_INT_MONTH:
+                    $this->timestamp = mktime((int)$this->toString('%H'), (int)$this->toString('%M'), (int)$this->toString('%S'), (int)$this->toString('%m') + $value, (int)$this->toString('%d'), (int)$this->toString('%Y'));
+                    break;
+
+                case MILKDATE_INT_YEAR:
+                    $this->timestamp = mktime((int)$this->toString('%H'), (int)$this->toString('%M'), (int)$this->toString('%S'), (int)$this->toString('%m'), (int)$this->toString('%d'), (int)$this->toString('%Y') + $value);
+                    break;
+            }
         }
 
         public function fromDBString($date) {

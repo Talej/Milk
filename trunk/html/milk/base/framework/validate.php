@@ -224,6 +224,8 @@
             if (self::getProp($props, 'required', FALSE) && self::isNull($val)) {
                 self::setError(sprintf('%s is required', MilkTools::ifNull(self::getProp($props, 'label'), self::createLabel($key))));
                 return FALSE;
+            } else if (self::isNull($val)) {
+                $val = NULL;
             }
             if (count($val) < self::getProp($props, 'min', 0)) {
                 self::setError(sprintf('%s must have at least %d options selected', MilkTools::ifNull(self::getProp($props, 'label'), self::createLabel($key)), self::getProp($props, 'min', 0)));
