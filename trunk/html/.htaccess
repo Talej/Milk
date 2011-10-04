@@ -1,9 +1,0 @@
-Options +FollowSymLinks
-RewriteEngine on
-
-RewriteCond %{REQUEST_URI} !\.(php|gif|jpe?g|png|css|js|pdf|doc|xml|ico|txt|zip)$
-RewriteRule (.*)$ /index.php [L]
-
-RewriteCond %{REQUEST_URI} /milk(js|css)
-RewriteRule (.*)$ /index.php [L]
-
