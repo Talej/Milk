@@ -211,8 +211,9 @@
             } else {
                 $args = func_get_args();
             }
+            $args = preg_replace('/^\//', '', $args);
 
-            return implode(DIR_SEP, $args);
+            return DIR_SEP . implode(DIR_SEP, $args);
         }
 
         static public function moduleExists($module) {

@@ -68,9 +68,13 @@
         protected function getHash() {
             $str = '';
             foreach ($this->files as $file) {
-                $webfile = MilkTools::mkPath(MILK_PATH, $file);
-                if (file_exists($webfile) && is_readable($webfile)) {
-                    $str.= md5_file($webfile);
+                if (preg_match('/https?:\/\//i', $file)) {
+                    $str.= md5($file);
+                } else {
+                    $webfile = MilkTools::mkPath(MILK_PATH, $file);
+                    if (file_exists($webfile) && is_readable($webfile)) {
+                        $str.= md5_file($webfile);
+                    }
                 }
             }
 
@@ -148,25 +152,29 @@
             }
 
             $cachefile = $this->cacheFile($hash);
-            if ($fp = fopen($cachefile, 'w+')) {
-                $gzdata = '';
-                foreach ($this->files as $file) {
+            $data = '';
+            foreach ($this->files as $file) {
+                if (preg_match('/https?:\/\//i', $file)) {
+                    $webfile = $file;
+                    $remote = TRUE;
+                } else {
                     $webfile = MilkTools::mkPath(MILK_PATH, $file);
-                    if (file_exists($webfile) && is_readable($webfile)) {
-                        if ($data = call_user_func($cb, file_get_contents($webfile))) {
-                            $gzdata.= $data;
-
-                            if (!fwrite($fp, $data)) {
-                                $error = TRUE;
-                                break;
-                            }
-                        }
+                    $remote = FALSE;
+                }
+                if ($remote || (file_exists($webfile) && is_readable($webfile))) {
+                    if (($tmp = file_get_contents($webfile)) !== FALSE) {
+                        $data.= $tmp;
+                    } else {
+                        $error = TRUE;
+                        break;
                     }
                 }
-                fclose($fp);
 
-                if (!$error && !file_put_contents($cachefile . '.gz', gzencode($gzdata))) {
-                    $error = TRUE;
+                if (!$error) {
+                    $data = call_user_func($cb, $data);
+                    if (!file_put_contents($cachefile, $data) || !file_put_contents($cachefile . '.gz', gzencode($data))) {
+                        $error = TRUE;
+                    }
                 }
             }
 
@@ -189,7 +197,12 @@
          */
         public function hasChangedSince($time) {
             foreach ($this->files as $file) {
-                $webfile = MilkTools::mkPath(MILK_PATH, $file);
+
+                if (preg_match('/https?:\/\//i', $file)) {
+                    continue; // TODO: Need to modify this to check Last-Modified header perhaps?
+                } else {
+                    $webfile = MilkTools::mkPath(MILK_PATH, $file);
+                }
                 if (!is_readable($webfile) || filemtime($webfile) > $time) {
                     return TRUE;
                 }

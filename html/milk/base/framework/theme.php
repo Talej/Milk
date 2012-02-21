@@ -3,12 +3,24 @@
     class MilkTheme extends MilkFramework {
         public $streams = array();
         public $mod;
+        public $path;
 
         public function __construct($mod) {
             $this->addHook('init');
             $cb = array($this, 'init');
             $this->addHookHandler('init', $cb);
             $this->mod = $mod;
+            $theme = str_replace('_MilkTheme', '', get_class($this));
+            $this->path = MilkTools::mkPath(($theme == 'default' ? 'base' : 'ext'), 'theme', $theme);
+        }
+
+        public function getPath($ctrl) {
+            if (str_replace('_MilkTheme', '', get_class($this)) == $ctrl->theme) {
+                return $this->path;
+            } else {
+                $theme = ($ctrl->theme ? $ctrl->theme : 'default');
+                return MilkTools::mkPath(($theme == 'default' ? 'base' : 'ext'), 'theme', $theme);
+            }
         }
 
         public function init() { }
@@ -186,6 +198,9 @@
         }
 
         public function jsControl($ctrl, $props=NULL) {
+            $jsfile = MilkTools::mkPath($this->getPath($ctrl), 'js', strtolower(str_replace('_MilkControl', '', get_class($ctrl))) . '.js');
+            if (file_exists(MilkTools::mkPath(MILK_DIR, $jsfile))) $this->includejs(MilkTools::mkPath('/milk', $jsfile));
+
             if (!$ctrl->strictConns) $props['strictConns'] = MilkTools::jsEncode(FALSE, JSTYPE_BOOL);
             if ($ctrl->savegroup)    $props['saveGroup']   = MilkTools::jsEncode($ctrl->savegroup);
 

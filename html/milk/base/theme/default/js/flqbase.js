@@ -102,6 +102,10 @@
         return r
     }
 
+    FLQ.jsonDecode = function (s) {
+        return eval('('+s+')')
+    }
+
     FLQ.nl2br = function (s) {
         return String(s).replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1<br />$2')
     }
@@ -248,24 +252,15 @@
         }
 
         var d = document.createElement('div')
-        FLQ.addClass(d, 'lboxwindow')
-
-        d.appendChild(b = document.createElement('div'))
-        FLQ.addClass(b, 'background')
+        FLQ.addClass(d, 'lightbox')
 
         d.appendChild(i = document.createElement('div'))
-        FLQ.addClass(i, 'lboxwindow-inner')
-        i.style.width = o['width']+'px'
-        i.style.height = o['height']+'px'
-        FLQ.lbox.setCenterPos(i)
+        FLQ.addClass(i, 'body')
 
         i.innerHTML = '<iframe frameborder="0" name="'+n+'" src="'+href+'"></iframe>'
 
-        // Re-center the lbox when the window is resized
-        FLQ.event.add(window, 'resize', function () { FLQ.lbox.setCenterPos(i) })
-
         // Close button
-        i.appendChild(c = document.createElement('div'))
+        i.appendChild(c = document.createElement('a'))
         FLQ.addClass(c, 'close')
         FLQ.event.add(c, 'click', FLQ.lbox.close)
 
@@ -285,24 +280,28 @@
             delete o['args']
         }
 
-        // Move event
-        i.appendChild(m = document.createElement('div'))
-        FLQ.addClass(m, 'move')
-        FLQ.event.add(m, 'mousedown', FLQ.lbox.startMove)
-
         document.body.appendChild(d)
         FLQ._['lbox'] = d
 
+        setTimeout('FLQ.lbox.show('+o['width']+', '+o['height']+')', 10)
+
         return i.firstChild
+    }
+
+    FLQ.lbox.show = function (w, h) {
+        if (FLQ.isObj(FLQ._['lbox'])) {
+            FLQ.addClass(FLQ._['lbox'], 'lightbox-show')
+            FLQ._['lbox'].firstChild.style.width = w+'px';
+            FLQ._['lbox'].firstChild.style.height = h+'px';
+        }
     }
 
     FLQ.lbox.close = function (reload) {
         if (!FLQ.isBool(reload)) reload = false
         if (FLQ.isObj(FLQ._['lbox'])) {
+            FLQ.addClass(FLQ._['lbox'], 'lightbox-hide');
             if (reload) window.location.reload()
-            FLQ._['lbox'].parentNode.removeChild(FLQ._['lbox'])
-            FLQ._['lbox'] = null
-            FLQ._['lboxargs'] = null
+            setTimeout('FLQ._[\'lbox\'].parentNode.removeChild(FLQ._[\'lbox\']);FLQ._[\'lbox\'] = null;FLQ._[\'lboxargs\'] = null', 1000)
         }
         FLQ.shortcut.remove('Esc')
     }
@@ -335,7 +334,7 @@
 
     FLQ.lbox.autoHeight = function () {
         if (FLQ._['lbox']) {
-            var i = FLQ._['lbox'].childNodes[1]
+            var i = FLQ._['lbox'].childNodes[0]
             var d = i.getElementsByTagName('iframe')[0].contentWindow.document
             // TODO: Work out where the 4px is coming from
             if (d.body) {
@@ -347,7 +346,7 @@
 //                     i.style.height = Math.min(Math.max(d.body.scrollHeight, d.body.offsetHeight, d.body.clientHeight)+6, window.top.document.documentElement.clientHeight-60)+'px'
 //                 }
             }
-            FLQ.lbox.setCenterPos(i)
+            //FLQ.lbox.setCenterPos(i)
         }
     }
 
@@ -406,58 +405,6 @@
             }
 
             if (end) FLQ.lbox.endResize()
-        }
-    }
-
-    FLQ.lbox.startMove = function (e) {
-        if (FLQ._['lbox']) {
-            if (FLQ.lbox.resizing) FLQ.lbox.endResize()
-            var iframe = FLQ._['lbox'].getElementsByTagName('iframe')[0]
-            FLQ.event.add(document.body, 'mouseup', FLQ.lbox.endMove)
-            FLQ.event.add(document.body, 'mousemove', FLQ.lbox.move)
-            FLQ.event.add(iframe.contentWindow.document.body, 'mouseup', FLQ.lbox.endMove)
-            FLQ.event.add(iframe.contentWindow.document.body, 'mousemove', FLQ.lbox.move)
-            FLQ.lbox.X = e.screenX
-            FLQ.lbox.Y = e.screenY
-            FLQ.lbox.moving = true
-
-            var m = iframe.parentNode
-            if (m) {
-                FLQ.addClass(m, 'moving')
-            }
-        }
-    }
-
-    FLQ.lbox.endMove = function () {
-        var iframe = FLQ._['lbox'].getElementsByTagName('iframe')[0]
-        FLQ.event.removeListener(document.body, 'mousemove', FLQ.lbox.move)
-        FLQ.event.removeListener(document.body, 'mouseup', FLQ.lbox.endMove)
-        FLQ.event.removeListener(iframe.contentWindow.document.body, 'mouseup', FLQ.lbox.endMove)
-        FLQ.event.removeListener(iframe.contentWindow.document.body, 'mousemove', FLQ.lbox.move)
-        FLQ.lbox.moving = false
-
-        var m = FLQ._['lbox'].getElementsByTagName('iframe')[0].parentNode
-        if (m) {
-            FLQ.removeClass(m, 'moving')
-        }
-    }
-
-    FLQ.lbox.move = function (e) {
-        if (FLQ._['lbox']) {
-            var m = FLQ._['lbox'].getElementsByTagName('iframe')[0].parentNode
-
-            if (m) {
-                var l = e.screenX-FLQ.lbox.X
-                var t = e.screenY-FLQ.lbox.Y
-                if (l > 3 || l < 3) {
-                    m.style.left = (parseInt(m.style.left)+l)+'px'
-                    FLQ.lbox.X = e.screenX
-                }
-                if (t > 3 || t < 3) {
-                    m.style.top = (parseInt(m.style.top)+t)+'px'
-                    FLQ.lbox.Y = e.screenY
-                }
-            }
         }
     }
 

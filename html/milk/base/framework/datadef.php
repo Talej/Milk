@@ -14,6 +14,7 @@
     define('DD_TYPE_TIME',      ++$i);
     define('DD_TYPE_DEF',       ++$i);
     define('DD_TYPE_EMAIL',     ++$i);
+    define('DD_TYPE_URL',       ++$i);
     define('DD_TYPE_PHONE',     ++$i);
     define('DD_TYPE_CHOOSER',   ++$i);
     define('DD_TYPE_FILE',      ++$i);
@@ -90,6 +91,13 @@
                             $attribs[DD_TYPE_EMAIL] = TRUE;
                             break;
                             
+                        case DD_TYPE_URL:
+                            $attribs[DD_ATTR_REGEX] = '^(https?:\/\/.+)?$'; // very soft URL validation
+                            $attribs[DD_ATTR_TYPE]     = 'text';
+                            $attribs[DD_ATTR_MAX]      = 255;
+                            $attribs[DD_TYPE_URL]      = TRUE;
+                            break;
+
                         case DD_TYPE_PHONE:
                             $attribs[DD_ATTR_TYPE]  = 'text';
                             $attribs[DD_ATTR_MAX]   = 255;
@@ -169,6 +177,8 @@
                 }
             }
 
+            if (!isset($attribs[DD_ATTR_LABEL])) $attribs[DD_ATTR_LABEL] = $this->createLabel($key);
+
             if (!isset($this->fields[$key])) {
                 $this->fields[$key] = array();
                 $this->setAttribs($key, $attribs);
@@ -202,6 +212,16 @@
 
         public function fieldExists($field) {
             return (isset($this->fields[$field]) ? TRUE : FALSE);
+        }
+
+        public function createLabel($key) {
+            if (substr($key, -2, 2) == 'ID') $key = substr($key, 0, -2);
+            $words = preg_split('/([A-Z][^A-Z]+)/', $key, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
+            $label = '';
+            foreach ($words as $word) {
+                $label.= ($label != '' ? ' ' . strtolower($word) : $word);
+            }
+            return $label;
         }
 
         public function validate($request=NULL) {

@@ -225,6 +225,10 @@
         return (this.isHost() ? this.toRelative() : this.toAbsolute())
     }
 
+    FLQ.URL.prototype.redirect = function () {
+        window.location = this.toString()
+    }
+
     FLQ.URL.encode = function (s) {
         var r = '', c, i, cs = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890$-_.!*\'(),'
         for (i=0; i < s.length; i++) {

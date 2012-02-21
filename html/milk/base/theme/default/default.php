@@ -128,6 +128,7 @@
                 }
 
                 if ($jsconn) {
+                    $this->includejs('/milk/base/theme/default/js/text.js');
                     $this->jsControl($ctrl);
                     $tag = 'a href="#"';
                 }
@@ -167,6 +168,7 @@
                 }
 
                 if ($jsconn) {
+                    $this->includejs('/milk/base/theme/default/js/text.js');
                     $this->jsControl($ctrl);
                 }
             }
@@ -257,6 +259,7 @@
 
         public function Box($ctrl) {
             if ($ctrl->hasAnyConnected()) {
+                $this->includejs('/milk/base/theme/default/js/text.js');
                 $this->jsControl($ctrl);
             }
 
@@ -352,7 +355,8 @@
             }
 
             $str = 'Milk.history = ' . MilkTools::jsEncode($ctrl->module->history, JSTYPE_ARRAY) . '; '
-                 . (!empty($ctrl->module->errors) ? 'Milk.notify(Milk.NOTIFY_ERROR, ' . MilkTools::jsEncode($ctrl->module->errors, JSTYPE_ARRAY) . ')' : '') . ' ';
+                 . (!empty($ctrl->module->errors) ? 'Milk.notify(Milk.NOTIFY_ERROR, ' . MilkTools::jsEncode($ctrl->module->errors, JSTYPE_ARRAY) . ')' : '') . ' '
+                 . (!empty($ctrl->module->messages) ? 'Milk.notify(Milk.NOTIFY_MESSAGE, ' . MilkTools::jsEncode($ctrl->module->messages, JSTYPE_ARRAY) . ')' : '') . ' ';
 
             $this->put('loadjs', $str);
 
@@ -527,7 +531,7 @@
             if ($ctrl->disabled) $props['disabled'] = 1;
             if ($ctrl->readonly) $props['readonly'] = 1;
             if ($ctrl->maxlen)   $props['maxlength'] = $ctrl->maxlen;
-//             $props['autocomplete'] = 'off';
+            if ($this->mod->config->get('FORM_PLACEHOLDERS') && ($label = $ctrl->getAttrib('label'))) $props['placeholder'] = $label;
 
             $class = 'textbox';
             if ($ctrl->getAttrib(DD_ATTR_REQUIRED)) $class.= ' textbox-required';
@@ -548,6 +552,8 @@
         }
 
         public function PasswordBox($ctrl) {
+            $this->includejs('/milk/base/theme/default/js/textbox.js');
+
             $jsprops = array(
                 'value'    => MilkTools::jsEncode($ctrl->value, JSTYPE_STRING),
                 'reqValue' => MilkTools::jsEncode($ctrl->reqValue, JSTYPE_STRING)
@@ -557,6 +563,7 @@
             $props = array();
             if ($ctrl->disabled) $props['disabled'] = 1;
             if ($ctrl->readonly) $props['readonly'] = 1;
+            if ($this->mod->config->get('FORM_PLACEHOLDERS') && ($label = $ctrl->getAttrib('label'))) $props['placeholder'] = $label;
 
             $class = 'passwordbox';
             if ($ctrl->getAttrib(DD_ATTR_REQUIRED)) $class.= ' passwordbox-required';
@@ -667,6 +674,7 @@
             $props = array();
             if ($ctrl->disabled) $props['disabled'] = 1;
             if ($ctrl->readonly) $props['readonly'] = 1;
+            if ($this->mod->config->get('FORM_PLACEHOLDERS') && ($label = $ctrl->getAttrib('label'))) $props['placeholder'] = $label;
 
             $str = '<div id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '">'
                  . FLQForm::textbox($this->getID($ctrl, ''), $props, $this->entitise($ctrl->reqValue))
@@ -677,6 +685,8 @@
         }
 
         public function DateTimeBox($ctrl) {
+            $this->includejs('/milk/base/theme/default/js/datebox.js');
+
             $jsprops = array(
                 'value'    => MilkTools::jsEncode($this->entitise($ctrl->value)),
                 'reqValue' => MilkTools::jsEncode($this->entitise($ctrl->reqValue)),
@@ -691,6 +701,7 @@
             $props = array();
             if ($ctrl->disabled) $props['disabled'] = 1;
             if ($ctrl->readonly) $props['readonly'] = 1;
+            if ($this->mod->config->get('FORM_PLACEHOLDERS') && ($label = $ctrl->getAttrib('label'))) $props['placeholder'] = $label;
 
             $str = '<div id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '">'
                  . FLQForm::textbox($this->getID($ctrl, ''), $props, $this->entitise($ctrl->reqValue))

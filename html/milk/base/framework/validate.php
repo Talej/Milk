@@ -131,6 +131,8 @@
             if (!MilkTools::isId($val) && (self::getProp($props, 'pk', FALSE) || !self::isNull($val))) {
                 self::setError(sprintf('%s is not a valid id value', MilkTools::ifNull(self::getProp($props, 'label'), self::createLabel($key))));
                 return FALSE;
+            } else if (self::isNull($val)) {
+                $val = NULL;
             }
 
             self::save($key, $val);
