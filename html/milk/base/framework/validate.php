@@ -56,7 +56,6 @@
                 case 'time':     $func = 'time';       break;
                 case 'chooser':  $func = 'chooser';    break;
                 case 'password': $func = 'password';   break;
-                case 'file':     $func = 'file';       break;
                 case 'custom':   $func = 'custom';     break;
 
                 default:
@@ -101,10 +100,6 @@
 
                             if ($validate && method_exists($v, $func)) {
                                 $v->{$func}($value, $field, $props);
-                            }
-
-                            if ($func == 'file') {
-                                $request[$field] = (isset($v->savedata[$field]) ? $v->savedata[$field] : NULL);
                             }
                         }
                     }
@@ -320,77 +315,6 @@
 
             self::save($key, $val);
 
-            return TRUE;
-        }
-
-        public function file($val, $key, $props) {
-            if (is_array($val) && isset($val['error'])) {
-                switch ($val['error']) {
-                    case UPLOAD_ERR_INI_SIZE:
-                        self::setError(sprintf('%s exceeds the maximum upload size of %dMb', MilkTools::ifNull(self::getProp($props, 'label'), self::createLabel($key)), ini_get('upload_max_filesize')));
-                        $val = NULL;
-                        return FALSE;
-
-                    case UPLOAD_ERR_FORM_SIZE:
-                        self::setError(sprintf('%s exceeds the maximum upload size of %dMb', MilkTools::ifNull(self::getProp($props, 'label'), self::createLabel($key)), $_REQUEST['MAX_FILE_SIZE']));
-                        $val = NULL;
-                        return FALSE;
-
-                    case UPLOAD_ERR_PARTIAL:
-                        self::setError(sprintf('%s was only partially uploaded', MilkTools::ifNull(self::getProp($props, 'label'), self::createLabel($key))));
-                        $val = NULL;
-                        return FALSE;
-
-                    case UPLOAD_ERR_NO_FILE:
-                        $val = NULL;
-                        break;
-
-                    case UPLOAD_ERR_NO_TMP_DIR:
-                    case UPLOAD_ERR_CANT_WRITE:
-//                     case UPLOAD_ERR_EXTENSION:
-                        self::setError(sprintf('An error occured while uploading %s', MilkTools::ifNull(self::getProp($props, 'label'), self::createLabel($key))));
-                        $val = NULL;
-                        return FALSE;
-                }
-            }
-
-            if (self::getProp($props, 'required', FALSE) && !is_array($val)) {
-                self::setError(sprintf('%s is required', MilkTools::ifNull(self::getProp($props, 'label'), self::createLabel($key))));
-                return FALSE;
-            }
-
-//             if (HOLMedia::isValidData($val)) {
-//                 if (self::getProp($props, 'filetype') && !preg_match('/' . self::getProp($props, 'filetype') . '/', HOLMedia::getMimeType($val['type'], $val['tmp_name']))) {
-//                     self::setError(sprintf(langstr('%s does not match required file type'), ifnull(self::getProp($props, 'label'), self::createLabel($key))));
-//                     return FALSE;
-//                 }
-                if (!self::isNull($val) && ($exts = self::getProp($props, 'exts'))) {
-                    $ext = strtolower(substr($val['name'], strrpos($val['name'], '.')+1));
-                    if (is_array($exts) && !empty($exts) && !in_array($ext, $exts)) {
-                        self::setError(sprintf('%s must have an extension of %s', MilkTools::ifNull(self::getProp($props, 'label'), self::createLabel($key)), implode(', ', $exts)));
-                        return FALSE;
-                    } else if (!is_array($exts) && $ext != $exts) {
-                        self::setError(sprintf('%s must have an extension of %s', MilkTools::ifNull(self::getProp($props, 'label'), self::createLabel($key)), $exts));
-                        return FALSE;
-                    }
-                }
-// 
-//                 if (!isset($val['skey'])) {
-//                     $tmpfile = '/tmp/filebox-' . rand(10000, 99999) . time();
-//                     if (move_uploaded_file($val['tmp_name'], $tmpfile)) {
-//                         $val['sname'] = $tmpfile;
-//                         $val['skey'] = crypt($tmpfile);
-//                     }
-//                 } else if (!isset($val['sname']) || crypt($val['sname'], $val['skey']) != $val['skey']) {
-//                     self::setError(sprintf(langstr('%s data has been corrupted. Please upload the file again'), ifnull(self::getProp($props, 'label'), self::createLabel($key))));
-//                     return FALSE;
-//                 }
-//             }
-//
-            if (!is_array($val)) $val = NULL;
-
-            self::save($key, $val);
-// 
             return TRUE;
         }
         

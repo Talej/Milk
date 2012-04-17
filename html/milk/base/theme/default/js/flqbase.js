@@ -66,7 +66,7 @@
             if (!isNaN(a[i])) return a[i]
         }
 
-        return NaN;
+        return NaN
     }
 
     if (!FLQ.isFunc(Array.prototype.search)) {
@@ -224,8 +224,37 @@
         for (i in props) {
             s+= (s != '' ? ',' : '') + i+'='+props[i]
         }
-// TODO: Need to add support for "launcher" property
+
+        if (FLQ.isSet(typeof props['args'])) {
+            if (!FLQ.isObj(FLQ._['popupargs'])) FLQ._['popupargs'] = {}
+            FLQ._['popupargs'] = props['args']
+            delete props['args']
+        }
+
         window.open(url, n, s)
+    }
+
+    FLQ.popup.getArgs = function () {
+        if (window.opener) {
+            var o = window.opener
+            if (
+                FLQ.isSet(typeof o.FLQ) &&
+                FLQ.isSet(typeof o.FLQ._) &&
+                FLQ.isSet(typeof o.FLQ._['popupargs'])
+            ) {
+                return o.FLQ._['popupargs']
+            }
+        }
+
+        return null
+    }
+
+    FLQ.popup.getLauncher = function () {
+        if (window.opener && !window.opener.closed) {
+            return window.opener;
+        }
+
+        return null;
     }
 
     FLQ.lbox = function () {
@@ -242,7 +271,7 @@
         var o = (a.length > 1 && FLQ.isObj(a[a.length-1]) ? a[a.length-1] : {})
         if (!FLQ.isSet(typeof o['width']) && a.length > 2) o['width'] = a[1]
         if (!FLQ.isSet(typeof o['height']) && a.length > 3) o['height'] = a[2]
-        var d = {'width':600,'height':400,'toolbars':'no','scrollbars':'yes','resizable':true}
+        var d = {'width':600,'height':400,'toolbars':'no','scrollbars':'yes'}
         for (var i in d) { if (!FLQ.isSet(typeof o[i])) o[i] = d[i] }
         if (FLQ.isSet(typeof o['name'])) {
             var n = o['name']
@@ -259,21 +288,6 @@
 
         i.innerHTML = '<iframe frameborder="0" name="'+n+'" src="'+href+'"></iframe>'
 
-        // Close button
-        i.appendChild(c = document.createElement('a'))
-        FLQ.addClass(c, 'close')
-        FLQ.event.add(c, 'click', FLQ.lbox.close)
-
-        // Add Esc shortcut to close lbox - char below is the keyboard escape key (keyCode 27)
-        FLQ.shortcut.add('Esc', FLQ.lbox.close)
-
-        // Resize button
-        if (o['resizable']) {
-            i.appendChild(r = document.createElement('div'))
-            FLQ.addClass(r, 'resize')
-            FLQ.event.add(r, 'mousedown', FLQ.lbox.startResize)
-        }
-
         if (FLQ.isSet(typeof o['args'])) {
             if (!FLQ.isObj(FLQ._['lboxargs'])) FLQ._['lboxargs'] = {}
             FLQ._['lboxargs'] = o['args']
@@ -283,27 +297,28 @@
         document.body.appendChild(d)
         FLQ._['lbox'] = d
 
-        setTimeout('FLQ.lbox.show('+o['width']+', '+o['height']+')', 10)
+        FLQ.lbox.show('+o['width']+', '+o['height']+')
 
         return i.firstChild
     }
 
     FLQ.lbox.show = function (w, h) {
         if (FLQ.isObj(FLQ._['lbox'])) {
-            FLQ.addClass(FLQ._['lbox'], 'lightbox-show')
-            FLQ._['lbox'].firstChild.style.width = w+'px';
-            FLQ._['lbox'].firstChild.style.height = h+'px';
+            FLQ.addClass(FLQ._['lbox'], 'lbox-show')
+            FLQ._['lbox'].firstChild.style.width = w+'px'
+            FLQ._['lbox'].firstChild.style.height = h+'px'
         }
     }
 
     FLQ.lbox.close = function (reload) {
         if (!FLQ.isBool(reload)) reload = false
         if (FLQ.isObj(FLQ._['lbox'])) {
-            FLQ.addClass(FLQ._['lbox'], 'lightbox-hide');
+            FLQ.addClass(FLQ._['lbox'], 'lbox-hide')
             if (reload) window.location.reload()
-            setTimeout('FLQ._[\'lbox\'].parentNode.removeChild(FLQ._[\'lbox\']);FLQ._[\'lbox\'] = null;FLQ._[\'lboxargs\'] = null', 1000)
+            FLQ._['lbox'].parentNode.removeChild(FLQ._['lbox'])
+            FLQ._['lbox'] = null
+            FLQ._['lboxargs'] = null
         }
-        FLQ.shortcut.remove('Esc')
     }
 
     FLQ.lbox.setCenterPos = function (n) {
@@ -350,64 +365,6 @@
         }
     }
 
-    FLQ.lbox.startResize = function (e) {
-        if (FLQ._['lbox']) {
-            if (FLQ.lbox.moving) FLQ.lbox.endMove()
-            var iframe = FLQ._['lbox'].getElementsByTagName('iframe')[0]
-            FLQ.event.add(document.body, 'mouseup', FLQ.lbox.endResize)
-            FLQ.event.add(document.body, 'mousemove', FLQ.lbox.resize)
-            FLQ.event.add(iframe.contentWindow.document.body, 'mouseup', FLQ.lbox.endResize)
-            FLQ.event.add(iframe.contentWindow.document.body, 'mousemove', FLQ.lbox.resize)
-            FLQ.lbox.X = e.screenX
-            FLQ.lbox.Y = e.screenY
-            FLQ.lbox.resizing = true
-            FLQ.event.stopEvent(e)
-        }
-    }
-
-    FLQ.lbox.endResize = function () {
-        var iframe = FLQ._['lbox'].getElementsByTagName('iframe')[0]
-        FLQ.event.removeListener(document.body, 'mousemove', FLQ.lbox.resize)
-        FLQ.event.removeListener(document.body, 'mouseup', FLQ.lbox.endResize)
-        FLQ.event.removeListener(iframe.contentWindow.document.body, 'mouseup', FLQ.lbox.endResize)
-        FLQ.event.removeListener(iframe.contentWindow.document.body, 'mousemove', FLQ.lbox.resize)
-        FLQ.lbox.resizing = false
-    }
-
-    FLQ.lbox.resize = function (e) {
-        if (FLQ._['lbox']) {
-            var m = FLQ._['lbox'].getElementsByTagName('iframe')[0].parentNode
-            var end = false
-
-            if (m) {
-                var w = e.screenX-FLQ.lbox.X
-                var h = e.screenY-FLQ.lbox.Y
-                if (w > 3 || w < 3) {
-                    var mw = parseInt(m.style.width)
-                    var neww = (mw != NaN ? mw : m.offsetWidth)+w
-                    if (neww >= FLQ.lbox.minWidth) {
-                        m.style.width = neww+'px'
-                        FLQ.lbox.X = e.screenX
-                    } else {
-                        end = true
-                    }
-                }
-                if (h > 3 || h < 3) {
-                    var mh = parseInt(m.style.height)
-                    var newh = (mh != NaN ? mh : m.offsteHeight)+h
-                    if (newh >= FLQ.lbox.minHeight) {
-                        m.style.height = newh+'px'
-                        FLQ.lbox.Y = e.screenY
-                    } else {
-                        end = true
-                    }
-                }
-            }
-
-            if (end) FLQ.lbox.endResize()
-        }
-    }
-
     Number.prototype.pad = function (n, p) {
         var s = '' + this
         p = p || '0'
@@ -416,9 +373,9 @@
     }
 
     // Date object extensions
-    Date.prototype.mths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    Date.prototype.wd = ['Sunday', 'Monday', 'Tuesday', 'Wednesday','Thursday', 'Friday', 'Saturday'];
-    Date.prototype.dim = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    Date.prototype.mths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+    Date.prototype.wd = ['Sunday', 'Monday', 'Tuesday', 'Wednesday','Thursday', 'Friday', 'Saturday']
+    Date.prototype.dim = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
     Date.prototype.strftime_f = {
         A: function (d) { return d.wd[d.getDay()] },
@@ -486,7 +443,7 @@
         }
 
         return r
-    };
+    }
 
     // TODO: Still some work to do on this for certain cases such as %b
     Date.prototype.strptime_f = {
@@ -542,108 +499,6 @@
         }
 
         return false
-    }
-
-    FLQ.shortcut = {}
-    FLQ.shortcut.enabled = false
-    FLQ.shortcut.events = {}
-
-    FLQ.shortcut.add = function (s, f) {
-        if (!FLQ.shortcut.enabled) FLQ.shortcut.enable()
-        s = FLQ.shortcut.parse(s)
-        if (!FLQ.isFunc(FLQ.shortcut.events[s])) {
-            FLQ.shortcut.events[s] = f
-        } else {
-            throw('A function is already registered to the shortcut '+s)
-        }
-    }
-
-    FLQ.shortcut.remove = function (s) {
-        s = FLQ.shortcut.parse(s)
-        if (FLQ.shortcut.events[s]) delete FLQ.shortcut.events[s]
-    }
-
-    /**
-     * parse is used to normalise the format of the shortcut signature
-     * passed to add so Ctrl+Shift+A would be the same as Ctrl+A+Shift
-     * for example
-     */
-    FLQ.shortcut.parse = function (s) {
-        s = s.toLowerCase()
-        var p = s.split('+')
-        var ctrl = false, alt = false, shift = false, esc = false, char = ''
-        if (p && p.length > 0) {
-            for (var i=0; i < p.length; i++) {
-                switch (p[i]) {
-                    case 'ctrl': ctrl = true; break
-                    case 'alt': alt = true; break
-                    case 'shift': shift = true; break
-                    case 'esc':
-                    default:
-                        char+= (char.length > 0 ? '+' : '') + p[i]
-                        break
-                }
-            }
-
-            var ns = ''
-            if (ctrl) ns+= 'ctrl'
-            if (alt) ns+= (ns.length > 0 ? '+' : '') + 'alt'
-            if (shift) ns+= (ns.length > 0 ? '+' : '') + 'shift'
-            if (esc) ns+= (ns.length > 0 ? '+' : '') + 'esc'
-            ns+= (ns.length > 0 ? '+' : '') + char
-
-            return ns
-        }
-
-        return s
-    }
-
-    FLQ.shortcut.handle = function (e) {
-        var t = FLQ.event.getTarget(e)
-        if (t.nodeName != 'INPUT' || t.nodeName != 'SELECT') {
-            var s = '';
-            if (e.ctrlKey)  s+= 'ctrl';
-            if (e.altKey)   s+= (s.length > 0 ? '+' : '') + 'alt'
-            if (e.shiftKey) s+= (s.length > 0 ? '+' : '') + 'shift'
-            if (e.keyCode == 27) {
-                s+= (s.length > 0 ? '+' : '') + 'esc'
-            } else {
-                var c = FLQ.event.getCharCode(e)
-                if (c > 0) s+= (s.length > 0 ? '+' : '') + String.fromCharCode(c).toLowerCase()
-            }
-
-            if (FLQ.isFunc(FLQ.shortcut.events[s])) {
-                FLQ.shortcut.events[s](e)
-                FLQ.event.stopEvent(e)
-            }
-        }
-    }
-
-    FLQ.shortcut.catchKeys = function (e) {
-        var t = FLQ.event.getTarget(e)
-        if (t.nodeName != 'INPUT' || t.nodeName != 'SELECT') {
-            var s = ''
-            if (e.ctrlKey)  s+= 'ctrl'
-            if (e.altKey)   s+= (s.length > 0 ? '+' : '') + 'alt'
-            if (e.shiftKey) s+= (s.length > 0 ? '+' : '') + 'shift'
-            if (e.keyCode == 27) {
-                s+= (s.length > 0 ? '+' : '') + 'esc'
-            } else {
-                var c = FLQ.event.getCharCode(e)
-                if (c > 0) s+= (s.length > 0 ? '+' : '') + String.fromCharCode(c).toLowerCase()
-            }
-
-            if (FLQ.isFunc(FLQ.shortcut.events[s])) {
-                FLQ.event.stopEvent(e)
-            }
-        }
-    }
-
-    FLQ.shortcut.enable = function () {
-        FLQ.event.add(document, 'keydown', FLQ.shortcut.handle)
-        // This was added to fix problem with Ctrl+A in Opera
-        FLQ.event.add(document, 'keypress', FLQ.shortcut.catchKeys)
-        FLQ.shortcut.enabled = true
     }
 
     FLQ.ajax = function (url, callback) {
@@ -739,7 +594,7 @@
         }
 
         return null
-    };
+    }
 
     FLQ.ajax.getValue = function (n, f) {
         var e = n.getElementsByTagName(f)
@@ -748,4 +603,5 @@
         }
 
         return null
-    }
+    };
+

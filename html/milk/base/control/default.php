@@ -1,7 +1,7 @@
 <?php
 
     class Text_MilkControl extends MilkControl {
-        public $signals = array('click');
+        public $signals = array('tap');
         public $value;
         public $nowrap = FALSE;
         public $color;
@@ -32,7 +32,7 @@
     }
 
     class Image_MilkControl extends MilkControl {
-        public $signals = array('click', 'over', 'out');
+        public $signals = array('tap');
         public $slots = array('setsrc');
         public $src;
         public $width;
@@ -86,32 +86,17 @@
         public $cssclass;
         public $width;
         public $height;
-        public $signals = array('click');
+        public $signals = array('tap');
     }
 
-    class VerticalBox_MilkControl extends MilkControl {
+    class VBox_MilkControl extends MilkControl {
         public $flex = 1;
         public $fitHeight = FALSE;
     }
 
-    /* Synonyms for the VerticalBox control */
-    class VertBox_MilkControl extends VerticalBox_MilkControl { }
-    class VBox_MilkControl extends VerticalBox_MilkControl { }
-    class VertContainer_MilkControl extends VerticalBox_MilkControl { }
-    class VertCont_MilkControl extends VerticalBox_MilkControl { }
-    class VCont_MilkControl extends VerticalBox_MilkControl { }
-    /* End Synonyms for the VerticalBox control */
-
-    class HorizontalBox_MilkControl extends MilkControl {
+    class HBox_MilkControl extends MilkControl {
         public $flex = 1;
     }
-
-    /* Synonyms for the HorizontalBox control */
-    class HorizBox_MilkControl extends HorizontalBox_MilkControl { }
-    class HBox_MilkControl extends HorizontalBox_MilkControl { }
-    class HorizContainer_MilkControl extends HorizontalBox_MilkControl { }
-    class HorizCont_MilkControl extends HorizontalBox_MilkControl { }
-    class HCont_MilkControl extends HorizontalBox_MilkControl { }
 
     class HideBox_MilkControl extends MilkControl {
         public $slots = array('show', 'hide', 'toggle');
@@ -218,231 +203,16 @@
         }
     }
 
-    class DataGrid_MilkControl extends MilkControl {
-        public $signals     = array('hover', 'focus', 'select');
-        public $slots       = array('first', 'prev', 'next', 'last', 'csv');
-        public $strictConns = FALSE;
-        public $data        = array();
-        public $numcols     = 0;
-        public $perpage     = NULL;
-        public $totalrows   = NULL;
-        public $offset      = 0;
-        public $sortCol     = 0;
-        public $sortDesc    = FALSE;
-        protected $props    = array();
-        protected $cols     = array();
-
-        public function __construct($parent, $name=NULL) {
-            parent::__construct($parent, $name);
-            if (isset($this->request['offset'])) $this->offset = $this->request['offset'];
-            if (isset($this->request['sortCol'])) $this->sortCol = $this->request['sortCol'];
-            if (isset($this->request['sortDesc'])) $this->sortDesc = $this->request['sortDesc'];
-        }
-
-        public function setProp($col, $key, $val) {
-            if (!isset($this->props[$col])) $this->props[$col] = array();
-            $this->props[$col][$key] = $val;
-        }
-
-        public function getProp($col, $key) {
-            if (isset($this->props[$col][$key])) {
-                return $this->props[$col][$key];
-            }
-
-            return NULL;
-        }
-
-        public function setHeaders($header) {
-            if (is_array($header)) {
-                $args = $header;
-            } else {
-                $args = func_get_args();
-            }
-            $c = count($args);
-            for ($i=0; $i < $c; $i++) {
-                if (is_string($args[$i])) {
-                    $this->setProp($i, 'header', $args[$i]);
-                } else {
-                    trigger_error('DataGrid::setHeaders() - ' . $args[$i] . ' is not a valid header', E_USER_ERROR);
-                }
-            }
-            $this->numcols = max($this->numcols, count($args));
-        }
-
-        public function setCols($col) {
-            if (is_array($col)) {
-                $args = $col;
-            } else {
-                $args = func_get_args();
-            }
-            foreach ($args as $col) {
-                if (!is_string($col)) {
-                    trigger_error('DataGrid::setCols() - ' . $col . ' is not a valid column name', E_USER_ERROR);
-                }
-            }
-            $this->cols = $args;
-            $this->numcols = count($this->cols);
-        }
-
-        public function sort($col, $desc=FALSE) {
-            if (is_integer($col) && isset($this->cols[$col])) {
-                $this->sortCol = $col;
-            } else if (is_scalar($col) && ($i = array_search($col, $this->cols)) !== FALSE) {
-                $this->sortCol = $i;
-            }
-            $this->sortDesc = ($desc ? TRUE : FALSE);
-        }
-
-        public function add($row, $actargs=NULL) {
-            $tmp = array();
-            $isarr = is_array($row);
-            if (!empty($this->cols)) {
-                foreach ($this->cols as $col) {
-                    $tmp[] = ($isarr ? $row[$col] : $row->{$col});
-                }
-            } else {
-                // TODO: Figure out how best to add data when cols not set
-            }
-
-            if (!empty($tmp)) {
-                $this->data[] = array($tmp, $actargs);
-                $this->numcols = max($this->numcols, count($tmp));
-            }
-        }
-
-        public function &normaliseRow($db, $sql, &$row) {
-            $keys = array_keys(get_object_vars($row));
-            foreach ($keys as $idx => $key) {
-                if (in_array($key, $this->cols) && ($meta = $db->getColumnMeta($sql->toString(), $idx)) && isset($meta['native_type'])) {
-                    switch ($meta['native_type']) {
-                        case 'DATE':
-                            if ($row->{$meta['name']} !== NULL && !is_object($row->{$meta['name']})) {
-                                $tmp = $row->{$meta['name']};
-                                $row->{$meta['name']} = new MilkDate();
-                                $row->{$meta['name']}->fromDBString($tmp);
-                            }
-                            break;
-
-                        case 'TIMESTAMP':
-                        case 'DATETIME':
-                            if ($row->{$meta['name']} !== NULL && !is_object($row->{$meta['name']})) {
-                                $tmp = $row->{$meta['name']};
-                                $row->{$meta['name']} = new MilkDateTime();
-                                $row->{$meta['name']}->fromDBString($tmp);
-                            }
-                            break;
-
-                        case 'TIME':
-                            if ($row->{$meta['name']} !== NULL && !is_object($row->{$meta['name']})) {
-                                $tmp = $row->{$meta['name']};
-                                $row->{$meta['name']} = new MilkTime();
-                                $row->{$meta['name']}->fromDBString($tmp);
-                            }
-                            break;
-                            
-                        case 'NEWDECIMAL': // TODO: Should there be any other types here??
-                            $dd = $this->module->getDD();
-                            if ($dd->fieldExists($meta['name']) && ($attr = $dd->getAttrib($meta['name'], DD_ATTR_PREFIX))) {
-                                $row->{$meta['name']} = $attr . $row->{$meta['name']};
-                            }
-                            break;
-                    }
-                }
-            }
-
-            return $row;
-        }
-
-        public function getNext($db, $sql) {
-            if ($this->perpage > 0) {
-                if ($this->totalrows == NULL && !isset($this->request['csv'])) {
-                    $sql->option('SQL_CALC_FOUND_ROWS');
-                    $sql->limit($this->perpage, $this->offset);
-                }
-            }
-            if ($this->totalrows == NULL && isset($this->cols[$this->sortCol])) {
-                $sql->orderby($this->cols[$this->sortCol], ($this->sortDesc ? 'DESC' : 'ASC'));
-            }
-            if ($row = $db->getnext($sql->toString())) {
-                if ($this->totalrows == NULL) {
-                    $this->totalrows = $db->foundrows();
-                }
-
-                return $this->normaliseRow($db, $sql, $row);
-            }
-
-            return NULL;
-        }
-
-        public function addNav($h) {
-            if ($this->perpage > 0) {
-                $pages = ($this->totalrows > 0 ? ceil($this->totalrows/$this->perpage) : 1);
-                $page  = floor($this->offset/$this->perpage)+1;
-
-                $f = $h->add('Button', '<<');
-                $p = $h->add('Button', '<');
-                if ($this->offset > 0) {
-                    $f->connect('click', $this, 'first');
-                    $p->connect('click', $this, 'prev');
-                } else {
-                    $f->disabled = TRUE;
-                    $p->disabled = TRUE;
-                }
-
-                $h->add('Text', sprintf('%d of %d', $page, $pages))->nowrap = TRUE;
-
-                $n = $h->add('Button', '>');
-                $l = $h->add('Button', '>>');
-                if ($this->offset < $this->totalrows-$this->perpage) {
-                    $n->connect('click', $this, 'next');
-                    $l->connect('click', $this, 'last');
-                } else {
-                    $n->disabled = TRUE;
-                    $l->disabled = TRUE;
-                }
-            } else {
-                // TODO: throw an error here
-            }
-        }
-
-        public function csv() {
-            $csv = $this->module->newControl('CSV');
-            $headers = array();
-            for ($i=0; $i < $this->numcols; $i++) {
-                if ($header = $this->getProp($i, 'header')) {
-                    $headers[] = $header;
-                }
-            }
-            if (!empty($headers)) $csv->addHeaders($headers);
-            foreach ($this->data as $row) {
-                list($data,) = $row;
-                $csv->add($data);
-            }
-            $csv->toFile();
-        }
-
-        public function deliver($theme) {
-            if (isset($this->request['csv'])) {
-                $this->csv();
-            } else {
-                parent::deliver($theme);
-            }
-        }
-        // TODO: Add deliver to check if nav is added when perpage is set
-    }
-
     /* Form controls */
     class Button_MilkControl extends MilkControl {
-        public $signals = array('click');
+        public $signals = array('tap');
         public $slots = array('disable', 'slotdone');
         public $value;
-        public $src;
         public $disabled = FALSE;
 
-        public function __construct($parent, $value, $src=NULL) {
+        public function __construct($parent, $value) {
             parent::__construct($parent);
             $this->value = $value;
-            $this->src   = $src;
         }
     }
 
@@ -559,8 +329,6 @@
     class DateTimeBox_MilkControl extends DateBox_MilkControl {
         public $signals = array('enter');
     }
-
-    class FileBox_MilkControl extends Form_MilkControl { }
     /* End form controls */
 
     class XML_MilkControl extends MilkControl {
@@ -602,81 +370,3 @@
         }
     }
 
-    class CSV_MilkControl extends MilkControl {
-        public $data = array();
-        public $delimeter = ',';
-        public $headers = array();
-
-        public function addHeaders($headers) {
-            if (is_array($headers) || is_object($headers)) {
-                foreach ($headers as $val) {
-                    $this->headers[] = $val;
-                }
-            }
-        }
-
-        public function add($row) {
-            if (is_array($row) || is_object($row)) {
-                $this->data[] = $row;
-            }
-        }
-
-        public function addAll($data) {
-            if (is_array($data)) {
-                $this->data = $data;
-                return TRUE;
-            }
-
-            return FALSE;
-        }
-
-        /**
-         * encode() takes an array and encodes it for use as a row in a CSV
-         *
-         * @return string the data (row) encoded for a CSV
-         * @param array &$data the data to CSV encode
-         * @param string $delim optional param, the column delimiter. Deaults to comma (,)
-         */
-        public function encode(&$data, $delim=NULL) {
-            if (!$delim) $delim = $this->delimeter;
-
-            $rowbuffer = '';
-            foreach ($data as $field) {
-                if (is_object($field) && method_exists($field, 'toString')) $field = $field->toString();
-                if (is_object($field) || is_array($field)) $field = '';
-                if ($rowbuffer != '') $rowbuffer .= $delim;
-                if ($field == '' || strchr($field, $delim) || strchr($field, '"')) {
-                    $field = '"' . str_replace('"', '""', $field) . '"';
-                }
-                $rowbuffer .= $field;
-            }
-
-            return $rowbuffer . "\r\n";
-            // Note: UTF-16LE encoding is required for asian character set support in excel.
-            // However, a BOM (Byte-Order-Mark must also be used at the beginning of the file for this to work
-            // return mb_convert_encoding($rowbuffer . "\r\n", 'UTF-16LE');
-        }
-
-        public function toFile($file=NULL) {
-            header('Pragma: ');
-            header('Content-type: text/csv; charset=utf-8');
-            header('Content-Disposition: attachment; filename="' . ($file ? str_replace('"', '\"', $filename) : 'data.csv') . '"');
-
-            print $this->toString();
-            exit;
-        }
-
-        public function toString() {
-            $csv = '';
-            if (!empty($this->headers)) {
-                $csv.= $this->encode($this->headers, $this->delimeter);
-            }
-            if (is_array($this->data)) {
-                foreach ($this->data as $key => $val) {
-                    if (is_array($val) || is_object($val)) $csv.= $this->encode($val, $this->delimeter);
-                }
-            }
-
-            return $csv;
-        }
-    }

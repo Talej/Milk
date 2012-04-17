@@ -6,9 +6,6 @@
 
         public function init() {
             $this->includecss('/milk/base/theme/default/css/style.css');
-            if (($ua = $this->mod->getProp('ua')) && $ua->isApp('MSIE', '7.0')) {
-                $this->includecss('/milk/base/theme/default/css/ie7.css');
-            }
 
             $this->includejs('/milk/base/theme/default/js/flqevent.js');
             $this->includejs('/milk/base/theme/default/js/flqbase.js');
@@ -40,12 +37,11 @@
         }
 
         public function xhtmlDoc($title=NULL) {
-            $str = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"\n"
-                 . "     \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"
-                 . "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">\n"
+            $str = "<!DOCTYPE html>\n"
+                 . "<html>\n"
                  . "<head>\n"
                  . "<title>" . $this->entitise($title) . "</title>\n"
-                 . "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>\n"
+                 . "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n"
                  . $this->includes()
                  . "</head>\n"
                  . "<body onload=\"load()\">" . $this->get('xhtml') . "</body>\n"
@@ -60,7 +56,7 @@
                 $class.= ' text-link';
                 $jsconn = TRUE;
                 $endtag = 'a';
-                if (($conns = $ctrl->getConnections('click')) && count($conns) == 1) {
+                if (($conns = $ctrl->getConnections('tap')) && count($conns) == 1) {
                     $c = $conns[0];
                     if (
                         @$c->args['send'] == FALSE &&
@@ -87,19 +83,7 @@
 
             if ($ctrl->cssclass) $class.= ' ' . $ctrl->cssclass;
 
-            $style = '';
-            if ($ctrl->nowrap) $style.= 'white-space:nowrap;';
-            if ($ctrl->color != '') $style.= 'color:#' . $ctrl->color . ';';
-            if ($style != '') $style = ' style="' . $style . '"';
-
-            $tooltip = '';
-            if ($ctrl->tooltip != '') {
-                $tag = 'a';
-                $class.= ' text-tooltip';
-                $tooltip = '<span class="tooltip">' . $this->entitise($ctrl->tooltip) . '</span>';
-            }
-
-            $str = '<' . $tag . ' id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '"' . $style . '>' . nl2br($this->entitise($ctrl->value)) . $tooltip . '</' . $endtag . '>';
+            $str = '<' . $tag . ' id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '">' . nl2br($this->entitise($ctrl->value)) . '</' . $endtag . '>';
 
             $this->put('xhtml', $str);
         }
@@ -110,7 +94,7 @@
                 $class.= ' label-link';
                 $jsconn = TRUE;
                 $endtag = 'a';
-                if (($conns = $ctrl->getConnections('click')) && count($conns) == 1) {
+                if (($conns = $ctrl->getConnections('tap')) && count($conns) == 1) {
                     $c = $conns[0];
                     if (
                         @$c->args['send'] == FALSE &&
@@ -135,12 +119,11 @@
             } else {
                 $tag = $endtag = 'div';
             }
-            if ($ctrl->wrap) $class.= ' label-wrap';
-            $style = '';
-            if ($ctrl->color != '') $style.= 'color:#' . $ctrl->color . ';';
-            if ($style != '') $style = ' style="' . $style . '"';
 
-            $str = '<' . $tag . ' id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '"' . $style . '>' . $this->entitise($ctrl->value) . '</' . $endtag . '>';
+            if ($ctrl->cssclass) $class.= ' ' . $ctrl->cssclass;
+            if ($ctrl->wrap) $class.= ' label-wrap';
+
+            $str = '<' . $tag . ' id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '">' . $this->entitise($ctrl->value) . '</' . $endtag . '>';
 
             $this->put('xhtml', $str);
         }
@@ -150,7 +133,7 @@
             if ($ctrl->hasAnyConnected()) {
                 $class.= ' heading-link';
                 $jsconn = TRUE;
-                if (($conns = $ctrl->getConnections('click')) && count($conns) == 1) {
+                if (($conns = $ctrl->getConnections('tap')) && count($conns) == 1) {
                     $c = $conns[0];
                     if (
                         @$c->args['send'] == FALSE &&
@@ -194,7 +177,7 @@
                 $class.= ' image-link';
                 $jsconn = TRUE;
                 $endtag = 'a';
-                if (($conns = $ctrl->getConnections('click')) && $ctrl->hasAnyConnected() == 1) {
+                if (($conns = $ctrl->getConnections('tap')) && $ctrl->hasAnyConnected() == 1) {
                     $c = $conns[0];
                     if (
                         @$c->args['send'] == FALSE &&
@@ -283,7 +266,7 @@
             $this->put('xhtml', $str);
         }
 
-        public function VerticalBox($ctrl) {
+        public function VBox($ctrl) {
             if ($ctrl->fitHeight) {
                 $jsprops = array(
                     'fitHeight' => MilkTools::jsEncode($ctrl->fitHeight, JSTYPE_BOOL)
@@ -302,14 +285,8 @@
 
             $this->put('xhtml', $str);
         }
-
-        public function VertBox($ctrl) { $this->VerticalBox($ctrl); }
-        public function VBox($ctrl) { $this->VerticalBox($ctrl); }
-        public function VertContainer($ctrl) { $this->VerticalBox($ctrl); }
-        public function VertCont($ctrl) { $this->VerticalBox($ctrl); }
-        public function VCont($ctrl) { $this->VerticalBox($ctrl); }
     
-        public function HorizontalBox($ctrl) {
+        public function HBox($ctrl) {
             $fr = $this->flexratio($ctrl);
 
             $str = '<div class="horizontalbox"><table class="hbox-table" cellpadding="0" cellspacing="0"><tr>';
@@ -326,12 +303,6 @@
 
             $this->put('xhtml', $str);
         }
-
-        public function HorizBox($ctrl) { $this->HorizontalBox($ctrl); }
-        public function HBox($ctrl) { $this->HorizontalBox($ctrl); }
-        public function HorizContainer($ctrl) { $this->HorizontalBox($ctrl); }
-        public function HorizCont($ctrl) { $this->HorizontalBox($ctrl); }
-        public function HCont($ctrl) { $this->HorizontalBox($ctrl); }
 
         public function HideBox($ctrl) { 
             $jsprops = array(
@@ -433,49 +404,11 @@
             $this->put('xhtml', $str);
         }
 
-        public function DataGrid($ctrl) {
-            $jsprops = array(
-                'connected' => MilkTools::jsEncode($ctrl->hasAnyConnected(), JSTYPE_BOOL),
-                'perpage'   => MilkTools::jsEncode($ctrl->perpage, JSTYPE_INT),
-                'totalrows' => MilkTools::jsEncode($ctrl->totalrows, JSTYPE_INT),
-                'offset'    => MilkTools::jsEncode($ctrl->offset, JSTYPE_INT),
-                'sortCol'   => MilkTools::jsEncode($ctrl->sortCol, JSTYPE_INT),
-                'sortDesc'  => MilkTools::jsEncode($ctrl->sortDesc, JSTYPE_BOOL)
-            );
-            $this->jsControl($ctrl, $jsprops);
-
-            $str = '<div class="datagrid"><table class="datagrid-table" id="' . $this->entitise($this->getID($ctrl)) . '"><tr class="dg-row">';
-            for ($i=0; $i < $ctrl->numcols; $i++) {
-                $class = '';
-                if ($ctrl->sortCol == $i) $class = ' class="sort' . ($ctrl->sortDesc ? 'desc' : '') . '"';
-                $str.= '<th' . $class . '>' . $this->entitise(MilkTools::ifNull($ctrl->getProp($i, 'header'), 'Col' . ($i+1))) . '</th>';
-            }
-            $str.= '</tr>';
-            $c = count($ctrl->data);
-            for ($i=0; $i < $c; $i++) {
-                $class = 'dg-row';
-                $class.= ($i%2==0 ? '' : ' datagrid-alt');
-                $args = (isset($ctrl->data[$i][1]) ? $ctrl->data[$i][1] : array());
-                $str.= '<tr actarg="' . $this->entitise(FLQURL::argsToString($args)) . '" class="' . $class . '">';
-                for ($o=0; $o < $ctrl->numcols; $o++) {
-                    $str.= '<td class="dg-cell">' . ($ctrl->data[$i][0][$o] != NULL ? $this->entitise($ctrl->data[$i][0][$o]) : '&nbsp;') . '</td>';
-                }
-                $str.= '</tr>';
-            }
-            if ($c == 0) {
-                $str.= '<tfoot><tr><td class="dg-cell" colspan="' . $ctrl->numcols . '"><em>There\'s currently no data to display.</em></td></tr></tfoot>';
-            }
-
-            $str.= '</table></div>';
-
-            $this->put('xhtml', $str);
-        }
-
         public function Button($ctrl) {
             $endtag = 'a';
             if ($ctrl->hasAnyConnected()) {
                 $jsconn = TRUE;
-                if (($conns = $ctrl->getConnections('click')) && count($conns) == 1) {
+                if (($conns = $ctrl->getConnections('tap')) && count($conns) == 1) {
                     $c = $conns[0];
                     if (
                         @$c->args['send'] == FALSE &&
@@ -505,14 +438,11 @@
                 $ctrl->disabled = TRUE;
             }
 
-            $img = '';
-            if ($ctrl->src != '') $img = '<img src="' . (substr($ctrl->src, 0, 1) == '/' ? '' : $this->imgSrc()) . $ctrl->src . '" alt="' . $this->entitise($ctrl->value) . '" />';
-
             $class = 'button';
             if ($ctrl->disabled) {
                 $class.= ' button-disabled';
             }
-            $str = '<' . $tag . ' id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '">' . $img . $this->entitise($ctrl->value) . '</' . $endtag . '>';
+            $str = '<' . $tag . ' id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '">' . $this->entitise($ctrl->value) . '</' . $endtag . '>';
 
             $this->put('xhtml', $str);
         }
@@ -677,8 +607,7 @@
             if ($this->mod->config->get('FORM_PLACEHOLDERS') && ($label = $ctrl->getAttrib('label'))) $props['placeholder'] = $label;
 
             $str = '<div id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '">'
-                 . FLQForm::textbox($this->getID($ctrl, ''), $props, $this->entitise($ctrl->reqValue))
-                 . '<div class="datebox-button"></div>'
+                 . FLQForm::datebox($this->getID($ctrl, ''), $props, $this->entitise($ctrl->reqValue))
                  . '</div>';
 
             $this->put('xhtml', $str);
@@ -704,30 +633,8 @@
             if ($this->mod->config->get('FORM_PLACEHOLDERS') && ($label = $ctrl->getAttrib('label'))) $props['placeholder'] = $label;
 
             $str = '<div id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '">'
-                 . FLQForm::textbox($this->getID($ctrl, ''), $props, $this->entitise($ctrl->reqValue))
-                 . '<div class="datetimebox-button"></div>'
+                 . FLQForm::datetimebox($this->getID($ctrl, ''), $props, $this->entitise($ctrl->reqValue))
                  . '</div>';
-
-            $this->put('xhtml', $str);
-        }
-
-        public function FileBox($ctrl) {
-            $this->jsControl($ctrl);
-
-            $class = 'filebox';
-            if ($ctrl->getAttrib(DD_ATTR_REQUIRED)) $class.= ' filebox-required';
-
-            $props = array();
-            if ($ctrl->disabled) $props['disabled'] = 1;
-            if ($ctrl->readonly) $props['readonly'] = 1;
-
-            $str = '<div id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '">';
-            if ($ctrl->value) {
-                $str.= var_export($ctrl->value, TRUE);
-            } else {
-                $str.= FLQForm::file($this->getID($ctrl, ''), $props, $ctrl->reqValue);
-            }
-            $str.= '</div>';
 
             $this->put('xhtml', $str);
         }
@@ -753,9 +660,5 @@
             } else {
                 print '/>';
             }
-        }
-
-        public function CSV($ctrl) {
-            $ctrl->toFile();
         }
     }
