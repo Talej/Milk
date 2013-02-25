@@ -137,7 +137,7 @@
 
         static public function requestInfo() {
             $info = array(0 => NULL, 1 => NULL, 2 => NULL, 'scheme' => NULL, 'host' => NULL, 'port' => NULL);
-            $forwarded_host = (array_key_exists('HTTP_X_FORWARDED_HOST', $_SERVER) ? substr($_SERVER['HTTP_X_FORWARDED_HOST'], 0, ifnot(strpos($_SERVER['HTTP_X_FORWARDED_HOST'], ','),strlen($_SERVER['HTTP_X_FORWARDED_HOST']))) : '');
+            $forwarded_host = (array_key_exists('HTTP_X_FORWARDED_HOST', $_SERVER) ? substr($_SERVER['HTTP_X_FORWARDED_HOST'], 0, MilkTools::ifnot(strpos($_SERVER['HTTP_X_FORWARDED_HOST'], ','),strlen($_SERVER['HTTP_X_FORWARDED_HOST']))) : '');
 
             // get the host
             if (preg_match('/^([^:]+)/i', $forwarded_host, $match)) {
@@ -167,7 +167,7 @@
             if (array_key_exists('HTTP_X_FORWARDED_PROTO', $_SERVER) && preg_match('/^https?/i', $_SERVER['HTTP_X_FORWARDED_PROTO'], $match)) {
                 $info['scheme'] = strtolower($match[0]);
                 $info[0]        = strtolower($match[0]);
-            } else if ((array_key_exists('SSL', $_ENV) && strtobool($_ENV['SSL'])) || (array_key_exists('HTTPS', $_ENV) && strtobool($_ENV['HTTPS']))) {
+            } else if ((array_key_exists('SSL', $_ENV) && MilkTools::strToBool($_ENV['SSL'])) || (array_key_exists('HTTPS', $_ENV) && MilkTools::strToBool($_ENV['HTTPS']))) {
                 $info['scheme'] = 'https';
                 $info[0]        = 'https';
             } else if ($info['port'] == 443) { // If port is 443 assume SSL

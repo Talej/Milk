@@ -309,11 +309,11 @@
             }
         }
 
-        public function normaliseNl($str, $nl="\n"){
+        public static function normaliseNl($str, $nl="\n"){
             return str_replace(array("\n", "\r\n", "\r"), $nl, $str);
         }
 
-        public function strToBool($s) {
+        public static function strToBool($s) {
             $s = strtolower($s);
             if ($s == 'yes' || $s == 'on' || $s === TRUE || $s == 1) {
                 return TRUE;
