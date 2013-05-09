@@ -1,16 +1,21 @@
 <?php
 
     // Available input  types
-    define('FLQFORM_TEXT', 'text');
+    define('FLQFORM_TEXT',         'text');
     define('FLQFORM_CHECKBOX', 'checkbox');
-    define('FLQFORM_RADIO', 'radio');
-    define('FLQFORM_BUTTON', 'button');
+    define('FLQFORM_RADIO',       'radio');
+    define('FLQFORM_BUTTON',     'button');
     define('FLQFORM_PASSWORD', 'password');
-    define('FLQFORM_SUBMIT', 'submit');
-    define('FLQFORM_FILE', 'file');
-    define('FLQFORM_HIDDEN', 'hidden');
-    define('FLQFORM_EMAIL', 'email');
-    define('FLQFORM_PHONE', 'phone');
+    define('FLQFORM_SUBMIT',     'submit');
+    define('FLQFORM_FILE',         'file');
+    define('FLQFORM_HIDDEN',     'hidden');
+    define('FLQFORM_EMAIL',       'email');
+    define('FLQFORM_PHONE',         'tel');
+    define('FLQFORM_URL',           'url');
+    define('FLQFORM_DATE',         'date');
+    define('FLQFORM_DATETIME', 'datetime');
+    define('FLQFORM_NUMBER',     'number');
+    define('FLQFORM_SEARCH',     'search');
 
     class FLQForm {
 
@@ -81,7 +86,7 @@
                 }
             }
             $attribs = self::parseAttribs($attribs);
-            return "<input type=\"{$type}\" name=\"{$name}\"{$attribs} value=\"{$newval}\"/>";
+            return "<input type=\"{$type}\" name=\"{$name}\" value=\"{$newval}\"{$attribs}>";
         }
 
         /**
@@ -154,6 +159,26 @@
          */
         public static function phonebox($name, $attribs=array(), $value=NULL) {
             return self::input(FLQFORM_PHONE, $name, $attribs, $value);
+        }
+
+        public static function urlbox($name, $attribs=array(), $value=NULL) {
+            return self::input(FLQFORM_URL, $name, $attribs, $value);
+        }
+
+        public static function datebox($name, $attribs=array(), $value=NULL) {
+            return self::input(FLQFORM_DATE, $name, $attribs, $value);
+        }
+
+        public static function datetimebox($name, $attribs=array(), $value=NULL) {
+            return self::input(FLQFORM_DATETIME, $name, $attribs, $value);
+        }
+
+        public static function numberbox($name, $attribs=array(), $value=NULL) {
+            return self::input(FLQFORM_NUMBER, $name, $attribs, $value);
+        }
+
+        public static function searchbox($name, $attribs=array(), $value=NULL) {
+            return self::input(FLQFORM_SEARCH, $name, $attribs, $value);
         }
 
         /**

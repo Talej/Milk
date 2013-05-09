@@ -28,12 +28,35 @@
 
     FLQ.event.f = {}
 
+    FLQ.event.isSupported = (function(){
+        var TAGNAMES = {
+          'select':'input','change':'input',
+          'submit':'form','reset':'form',
+          'error':'img','load':'img','abort':'img'
+        }
+        function isEventSupported(e) {
+            var n = document.createElement(TAGNAMES[e] || 'div')
+            e = 'on' + e
+            var isSupported = (e in n)
+            if (!isSupported) {
+                n.setAttribute(e, 'return;')
+                isSupported = typeof n[e] == 'function'
+            }
+            n = null
+            return isSupported
+        }
+        return isEventSupported
+    })()
+
+    FLQ.event.isTouch = (FLQ.event.isSupported('touchstart') ? true : false)
+
     /**
      * addListener() will add a listener to an element for a given event
      */
     FLQ.event.addListener = function(n, e, f, cap) {
         if (typeof n == 'string') n = document.getElementById(n)
         if (typeof n != 'object') throw(n+' is not an object')
+        e = FLQ.event.mapEvent(e)
         if (typeof n.addEventListener != 'undefined') {
             n.addEventListener(e, f, cap)
         } else if (typeof n.attachEvent != 'undefined') {
@@ -42,6 +65,26 @@
     }
 
     FLQ.event.add = FLQ.event.addListener
+
+    FLQ.event.mapEvent = function (e) {
+        if (FLQ.event.isTouch) {
+            switch (e) {
+                case 'mousedown':  e = 'touchstart'; break;
+                case 'mouseup':    e = 'touchend';   break;
+                case 'mousemove':  e = 'touchmove';  break;
+                case 'tap':        e = 'touchstart'; break;
+            }
+        } else {
+            switch (e) {
+                case 'touchstart': e = 'mousedown'; break;
+                case 'touchend':   e = 'mouseup';   break;
+                case 'touchmove':  e = 'mousemove'; break;
+                case 'tap':        e = 'click';     break;
+            }
+        }
+
+        return e
+    }
 
     /**
      * getXY() will return an array of the X and Y coord's of the event

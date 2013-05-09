@@ -159,7 +159,7 @@
 
                 $compress = new FLQCompress(FLQCOMPRESS_TYPE_CSS, $cssfiles);
                 if ($csscache = $compress->exec()) {
-                    $str.= "<link rel=\"stylesheet\" href=\"" . $this->entitise($csscache) . "\" type=\"text/css\" />\n";
+                    $str.= "<link rel=\"stylesheet\" href=\"" . $this->entitise($csscache) . "\" type=\"text/css\">\n";
                     $cachedcss = TRUE;
                 }
             }
@@ -167,7 +167,7 @@
                 $cssstr = '';
                 foreach ($cssfiles as $cssfile) {
                     if (!isset($first)) {
-                        $str.= "<link rel=\"stylesheet\" href=\"" . $this->entitise($cssfile) . "\" type=\"text/css\" />\n";
+                        $str.= "<link rel=\"stylesheet\" href=\"" . $this->entitise($cssfile) . "\" type=\"text/css\">\n";
                     } else {
                         $cssstr.= "@import url(\"" . $this->entitise($cssfile) . "\");\n";
                     }

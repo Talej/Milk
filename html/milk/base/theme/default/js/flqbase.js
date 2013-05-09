@@ -66,7 +66,7 @@
             if (!isNaN(a[i])) return a[i]
         }
 
-        return NaN;
+        return NaN
     }
 
     if (!FLQ.isFunc(Array.prototype.search)) {
@@ -224,8 +224,37 @@
         for (i in props) {
             s+= (s != '' ? ',' : '') + i+'='+props[i]
         }
-// TODO: Need to add support for "launcher" property
+
+        if (FLQ.isSet(typeof props['args'])) {
+            if (!FLQ.isObj(FLQ._['popupargs'])) FLQ._['popupargs'] = {}
+            FLQ._['popupargs'] = props['args']
+            delete props['args']
+        }
+
         window.open(url, n, s)
+    }
+
+    FLQ.popup.getArgs = function () {
+        if (window.opener) {
+            var o = window.opener
+            if (
+                FLQ.isSet(typeof o.FLQ) &&
+                FLQ.isSet(typeof o.FLQ._) &&
+                FLQ.isSet(typeof o.FLQ._['popupargs'])
+            ) {
+                return o.FLQ._['popupargs']
+            }
+        }
+
+        return null
+    }
+
+    FLQ.popup.getLauncher = function () {
+        if (window.opener && !window.opener.closed) {
+            return window.opener;
+        }
+
+        return null;
     }
 
     FLQ.lbox = function () {
@@ -290,16 +319,16 @@
 
     FLQ.lbox.show = function (w, h) {
         if (FLQ.isObj(FLQ._['lbox'])) {
-            FLQ.addClass(FLQ._['lbox'], 'lightbox-show')
-            FLQ._['lbox'].firstChild.style.width = w+'px';
-            FLQ._['lbox'].firstChild.style.height = h+'px';
+            FLQ.addClass(FLQ._['lbox'], 'lbox-show')
+            FLQ._['lbox'].firstChild.style.width = w+'px'
+            FLQ._['lbox'].firstChild.style.height = h+'px'
         }
     }
 
     FLQ.lbox.close = function (reload) {
         if (!FLQ.isBool(reload)) reload = false
         if (FLQ.isObj(FLQ._['lbox'])) {
-            FLQ.addClass(FLQ._['lbox'], 'lightbox-hide');
+            FLQ.addClass(FLQ._['lbox'], 'lbox-hide')
             if (reload) window.location.reload()
             setTimeout('FLQ._[\'lbox\'].parentNode.removeChild(FLQ._[\'lbox\']);FLQ._[\'lbox\'] = null;FLQ._[\'lboxargs\'] = null', 1000)
         }
@@ -416,9 +445,9 @@
     }
 
     // Date object extensions
-    Date.prototype.mths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    Date.prototype.wd = ['Sunday', 'Monday', 'Tuesday', 'Wednesday','Thursday', 'Friday', 'Saturday'];
-    Date.prototype.dim = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    Date.prototype.mths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+    Date.prototype.wd = ['Sunday', 'Monday', 'Tuesday', 'Wednesday','Thursday', 'Friday', 'Saturday']
+    Date.prototype.dim = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
     Date.prototype.strftime_f = {
         A: function (d) { return d.wd[d.getDay()] },
@@ -486,7 +515,7 @@
         }
 
         return r
-    };
+    }
 
     // TODO: Still some work to do on this for certain cases such as %b
     Date.prototype.strptime_f = {
@@ -739,7 +768,7 @@
         }
 
         return null
-    };
+    }
 
     FLQ.ajax.getValue = function (n, f) {
         var e = n.getElementsByTagName(f)
@@ -748,4 +777,5 @@
         }
 
         return null
-    }
+    };
+

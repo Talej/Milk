@@ -1,7 +1,7 @@
 <?php
 
     class Text_MilkControl extends MilkControl {
-        public $signals = array('click');
+        public $signals = array('tap');
         public $value;
         public $nowrap = FALSE;
         public $color;
@@ -32,7 +32,7 @@
     }
 
     class Image_MilkControl extends MilkControl {
-        public $signals = array('click', 'over', 'out');
+        public $signals = array('tap', 'over', 'out');
         public $slots = array('setsrc');
         public $src;
         public $width;
@@ -86,32 +86,17 @@
         public $cssclass;
         public $width;
         public $height;
-        public $signals = array('click');
+        public $signals = array('tap');
     }
 
-    class VerticalBox_MilkControl extends MilkControl {
+    class VBox_MilkControl extends MilkControl {
         public $flex = 1;
         public $fitHeight = FALSE;
     }
 
-    /* Synonyms for the VerticalBox control */
-    class VertBox_MilkControl extends VerticalBox_MilkControl { }
-    class VBox_MilkControl extends VerticalBox_MilkControl { }
-    class VertContainer_MilkControl extends VerticalBox_MilkControl { }
-    class VertCont_MilkControl extends VerticalBox_MilkControl { }
-    class VCont_MilkControl extends VerticalBox_MilkControl { }
-    /* End Synonyms for the VerticalBox control */
-
-    class HorizontalBox_MilkControl extends MilkControl {
+    class HBox_MilkControl extends MilkControl {
         public $flex = 1;
     }
-
-    /* Synonyms for the HorizontalBox control */
-    class HorizBox_MilkControl extends HorizontalBox_MilkControl { }
-    class HBox_MilkControl extends HorizontalBox_MilkControl { }
-    class HorizContainer_MilkControl extends HorizontalBox_MilkControl { }
-    class HorizCont_MilkControl extends HorizontalBox_MilkControl { }
-    class HCont_MilkControl extends HorizontalBox_MilkControl { }
 
     class HideBox_MilkControl extends MilkControl {
         public $slots = array('show', 'hide', 'toggle');
@@ -433,16 +418,14 @@
 
     /* Form controls */
     class Button_MilkControl extends MilkControl {
-        public $signals = array('click');
+        public $signals = array('tap');
         public $slots = array('disable', 'slotdone');
         public $value;
-        public $src;
         public $disabled = FALSE;
 
-        public function __construct($parent, $value, $src=NULL) {
+        public function __construct($parent, $value) {
             parent::__construct($parent);
             $this->value = $value;
-            $this->src   = $src;
         }
     }
 
