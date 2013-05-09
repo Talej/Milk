@@ -206,7 +206,7 @@
             $sprite = (is_numeric($ctrl->x) && is_numeric($ctrl->y) ? TRUE : FALSE);
 
             $str = '<' . $tag . ' id="' . $this->entitise($this->getID($ctrl)) . '" class="' . $class . '">'
-                 . '<img src="' . $this->entitise($sprite ? '/milk/base/theme/standard/img/1px.png' : $ctrl->src) . '" '
+                 . '<img src="' . $this->entitise($sprite ? '/milk/base/theme/default/img/1px.png' : $ctrl->src) . '" '
                  . ($ctrl->width > 0 ? ' width="' . $ctrl->width . '" ' : '')
                  . ($ctrl->height > 0 ? ' height="' . $ctrl->height . '" ' : '')
                  . ($ctrl->alt ? ' alt="' . $this->entitise($ctrl->alt) . '" title="' . $this->entitise($ctrl->alt) . '" ' : '')

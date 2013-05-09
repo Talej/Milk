@@ -297,7 +297,7 @@
         document.body.appendChild(d)
         FLQ._['lbox'] = d
 
-        FLQ.lbox.show('+o['width']+', '+o['height']+')
+        FLQ.lbox.show('+o['+width+']+', '+o['+height+']+')
 
         return i.firstChild
     }

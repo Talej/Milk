@@ -195,13 +195,16 @@
 
         public static function loadConfig() {
             self::load(MILK_BASE_DIR, 'framework', 'config.php');
-            $GLOBALS['config'] = new MilkConfig();
+            if (!isset($GLOBALS['config'])) {
+                $GLOBALS['config'] = new MilkConfig();
 
-            self::loadDir(MILK_APP_DIR, 'config');
-            self::loadDir(MILK_EXT_DIR, 'config');
-            self::load(MILK_BASE_DIR, 'config', 'default.php');
+                self::loadDir(MILK_APP_DIR, 'config');
+                self::loadDir(MILK_EXT_DIR, 'config');
+                self::load(MILK_BASE_DIR, 'config', 'default.php');
 
-            $GLOBALS['config']->define();
+                $GLOBALS['config']->define();
+            }
+
             return $GLOBALS['config'];
         }
 

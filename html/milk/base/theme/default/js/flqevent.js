@@ -66,7 +66,7 @@
 
     FLQ.event.add = FLQ.event.addListener
 
-    FLQ.event.mapEvent(e) {
+    FLQ.event.mapEvent = function (e) {
         if (FLQ.event.isTouch) {
             switch (e) {
                 case 'mousedown':  e = 'touchstart'; break;
