@@ -118,8 +118,8 @@
             if (file_exists(MilkTools::mkPath(MILK_PATH, $templatecss))) $this->addCSS($templatecss);
         }
 
-        public function addCSS($file) {
-            $this->css[] = $file;
+        public function addCSS($file, $media='screen') {
+            $this->css[] = array($file, $media);
         }
 
         public function setFile($name) {

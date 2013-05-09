@@ -121,8 +121,12 @@
             }
         }
 
-        public function includecss($css) {
-            $this->put('includecss', $css);
+        public function includecss($css, $media='screen') {
+            if (in_array($media, array('all', 'screen', 'print'))) {
+                $this->put($media . 'css', $css);
+            } else {
+                $this->put('includecss', array($css, $media));
+            }
         }
 
         public function includes() {
@@ -152,29 +156,41 @@
                 }
             }
 
-            $cssfiles = array_unique($this->get('includecss', NULL));
-            $cachedcss = FALSE;
-            if ((!defined('CFG_DEBUG_ENABLED') || !CFG_DEBUG_ENABLED) && !empty($cssfiles)) {
-                include_once(MilkTools::mkPath(MILK_BASE_DIR, 'util', 'compress.php'));
+            $medias = array('all', 'screen', 'print');
+            foreach ($medias as $media) {
+                if (isset($first)) unset($first);
+                $cssfiles = array_unique($this->get($media . 'css', NULL));
+                $cachedcss = FALSE;
+                if ((!defined('CFG_DEBUG_ENABLED') || !CFG_DEBUG_ENABLED) && !empty($cssfiles)) {
+                    include_once(MilkTools::mkPath(MILK_BASE_DIR, 'util', 'compress.php'));
 
-                $compress = new FLQCompress(FLQCOMPRESS_TYPE_CSS, $cssfiles);
-                if ($csscache = $compress->exec()) {
-                    $str.= "<link rel=\"stylesheet\" href=\"" . $this->entitise($csscache) . "\" type=\"text/css\">\n";
-                    $cachedcss = TRUE;
-                }
-            }
-            if (!$cachedcss) {
-                $cssstr = '';
-                foreach ($cssfiles as $cssfile) {
-                    if (!isset($first)) {
-                        $str.= "<link rel=\"stylesheet\" href=\"" . $this->entitise($cssfile) . "\" type=\"text/css\">\n";
-                    } else {
-                        $cssstr.= "@import url(\"" . $this->entitise($cssfile) . "\");\n";
+                    $compress = new FLQCompress(FLQCOMPRESS_TYPE_CSS, $cssfiles);
+                    if ($csscache = $compress->exec()) {
+                        $str.= "<link rel=\"stylesheet\" href=\"" . $this->entitise($csscache) . "\" type=\"text/css\" media=\"" . $this->entitise($media) . "\">\n";
+                        $cachedcss = TRUE;
                     }
                 }
-                if ($cssstr != '') {
-                    $str.= "<style type=\"text/css\">" . $cssstr . "</style>\n";
+                if (!$cachedcss) {
+                    $cssstr = '';
+                    foreach ($cssfiles as $cssfile) {
+                        if (!isset($first)) {
+                            $str.= "<link rel=\"stylesheet\" href=\"" . $this->entitise($cssfile) . "\" type=\"text/css\" media=\"" . $this->entitise($media) . "\">\n";
+                            $first = TRUE;
+                        } else {
+                            $cssstr.= "@import url(\"" . $this->entitise($cssfile) . "\");\n";
+                        }
+                    }
+                    if ($cssstr != '') {
+                        $str.= "<style type=\"text/css\" media=\"" . $this->entitise($media) . "\">" . $cssstr . "</style>\n";
+                    }
                 }
+            }
+
+            // non-compressable css files (non-standard media type)
+            $cssfiles = array_unique($this->get('includecss', NULL));
+            foreach ($cssfiles as $css) {
+                list($cssfile, $media) = $css;
+                $str.= "<link rel=\"stylesheet\" href=\"" . $this->entitise($cssfile) . "\" type=\"text/css\" media=\"" . $this->entitise($media) . "\">\n";
             }
 
             // fetch and compress the javascript

@@ -325,7 +325,7 @@
             $this->jsControl($ctrl);
 
             foreach ($ctrl->css as $file) {
-                $this->includecss($file);
+                $this->includecss($file[0], $file[1]);
             }
 
             $str = 'Milk.history = ' . MilkTools::jsEncode($ctrl->module->history, JSTYPE_ARRAY) . '; '
