@@ -12,6 +12,6 @@
     Milk.Ctrl.Text.prototype.init = function () {
         this.n = _$(this.id)
         var c = this
-        FLQ.e.add(this.n, 'tap', function (e) { c.sendSignal('click'); FLQ.e.stopEvent(e) })
+        FLQ.e.add(this.n, 'tap', function (e) { c.sendSignal('tap'); FLQ.e.stopEvent(e) })
     }
 

@@ -187,7 +187,7 @@
             }
 
             // non-compressable css files (non-standard media type)
-            $cssfiles = array_unique($this->get('includecss', NULL));
+            $cssfiles = $this->get('includecss', NULL);
             foreach ($cssfiles as $css) {
                 list($cssfile, $media) = $css;
                 $str.= "<link rel=\"stylesheet\" href=\"" . $this->entitise($cssfile) . "\" type=\"text/css\" media=\"" . $this->entitise($media) . "\">\n";
